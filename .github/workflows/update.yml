@@ -1,0 +1,29 @@
+name: Aggiorna Azure News Hub
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # ogni 6 ore (orario UTC)
+  workflow_dispatch:         # permette l'avvio manuale dal tab Actions
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Genera la pagina dai feed ufficiali Azure
+        run: python build.py
+      - name: Pubblica se ci sono aggiornamenti
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --staged --quiet || git commit -m "Auto-update Azure news"
+          git push
