@@ -206,7 +206,7 @@ HTML = '''<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Azure News Hub — Arrow ECS</title>
+<title>Azure News Hub — Arrow Italia ECS</title>
 <style>
 :root{--azure:#0078D4;--azure-dark:#004E8C;--azure-deep:#003057;--bg:#f3f6fb;--surface:#fff;--ink:#1b1f27;--muted:#5b6472;--border:#e2e8f2;--shadow:0 2px 10px rgba(0,48,87,.08)}
 *{box-sizing:border-box}html,body{margin:0;padding:0}
@@ -214,6 +214,9 @@ body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:v
 a{color:var(--azure);text-decoration:none}a:hover{text-decoration:underline}
 .topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 28px;flex-wrap:wrap}
 .topbar .arrow{height:26px;width:auto;display:block}
+.topbar .brand-left{display:flex;align-items:center;gap:12px}
+.it-flag{height:18px;width:27px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.12);display:block;flex:0 0 auto}
+.brand-name{font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:.01em;white-space:nowrap}
 .topbar .brand-right{display:flex;align-items:center;gap:14px}
 .ms-logo{height:24px;width:auto;display:block}.divider{width:1px;height:26px;background:var(--border)}
 .brand-tag{font-size:.82rem;color:var(--muted);font-weight:600;letter-spacing:.02em}
@@ -257,6 +260,9 @@ main{max-width:1120px;margin:0 auto;padding:10px 28px 40px}.section{margin-top:3
 .src{font-size:.74rem;color:var(--muted);font-weight:600}.card-foot a{font-size:.8rem;font-weight:600;white-space:nowrap}
 footer{background:linear-gradient(135deg,var(--azure-deep),var(--azure-dark));color:#eaf3ff;margin-top:44px;padding:44px 28px 30px}
 .foot-wrap{max-width:1120px;margin:0 auto}.foot-arrow{height:30px;width:auto;margin-bottom:18px}
+.foot-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.foot-brand .foot-arrow{margin-bottom:0}
+.foot-brand-name{font-size:1.05rem;font-weight:700;color:#fff;white-space:nowrap}
 footer h2{color:#fff;margin:0 0 6px;font-size:1.4rem}footer .fsub{margin:0 0 24px;color:#bcd7f2;max-width:640px}
 .contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:1040px}
 .contact{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:18px 20px}
@@ -270,12 +276,16 @@ footer h2{color:#fff;margin:0 0 6px;font-size:1.4rem}footer .fsub{margin:0 0 24p
 </head>
 <body>
 <div class="topbar">
-  <img class="arrow" src="data:image/png;base64,__ARROW_BLACK__" alt="Arrow">
+  <div class="brand-left">
+    <img class="arrow" src="data:image/png;base64,__ARROW_BLACK__" alt="Arrow">
+    <svg class="it-flag" viewBox="0 0 3 2" role="img" aria-label="Italia"><rect width="1" height="2" x="0" fill="#009246"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#CE2B37"/></svg>
+    <span class="brand-name">Arrow Italia ECS</span>
+  </div>
   <div class="brand-right"><span class="brand-tag">Azure News Hub</span><span class="divider"></span>__MS_LOGO__</div>
 </div>
 <header class="hero">
   <h1>Microsoft Azure — News Ufficiali</h1>
-  <p class="sub">Aggiornamenti, novità e annunci ufficiali della piattaforma Microsoft Azure. Curato dal team Cloud di Arrow ECS.</p>
+  <p class="sub">Aggiornamenti, novità e annunci ufficiali della piattaforma Microsoft Azure. Curato dal team Cloud di Arrow Italia ECS.</p>
   <div class="updated">Aggiornato al __UPDATED__</div>
   <div class="sources"><span>Microsoft Azure Blog</span><span>Azure Updates</span><span>Microsoft Learn</span><span>GitHub · Azure</span></div>
 </header>
@@ -314,9 +324,9 @@ __GITHUB__
 </main>
 <footer>
   <div class="foot-wrap">
-    <img class="foot-arrow" src="data:image/png;base64,__ARROW_WHITE__" alt="Arrow">
+    <div class="foot-brand"><img class="foot-arrow" src="data:image/png;base64,__ARROW_WHITE__" alt="Arrow"><svg class="it-flag" viewBox="0 0 3 2" role="img" aria-label="Italia"><rect width="1" height="2" x="0" fill="#009246"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#CE2B37"/></svg><span class="foot-brand-name">Arrow Italia ECS</span></div>
     <h2>Hai bisogno di supporto? Contattaci</h2>
-    <p class="fsub">Il team Cloud di Arrow ECS è a disposizione per approfondimenti su Microsoft Azure, progetti CSP e percorsi di adozione cloud.</p>
+    <p class="fsub">Il team Cloud di Arrow Italia ECS è a disposizione per approfondimenti su Microsoft Azure, progetti CSP e percorsi di adozione cloud.</p>
     <div class="contacts">
       <div class="contact"><div class="role">Microsoft Business Developer</div><div class="name">Marco Di Siero</div><div class="mail-row">✉ <a href="mailto:Marco.DiSiero@arrow.com">Marco.DiSiero@arrow.com</a></div></div>
       <div class="contact"><div class="role">Brand Manager Azure</div><div class="name">Giuseppe Cirillo</div><div class="mail-row">✉ <a href="mailto:Giuseppe.Cirillo@arrow.com">Giuseppe.Cirillo@arrow.com</a></div></div>
