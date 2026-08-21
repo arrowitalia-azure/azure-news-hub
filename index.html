@@ -1,212 +1,10 @@
-#!/usr/bin/env python3
-# Azure News Hub - build script (GitHub Actions ready).
-# Legge i feed ufficiali Microsoft Azure e ricostruisce index.html.
-# Nessuna dipendenza esterna: usa solo la libreria standard di Python.
-import base64, html, os, re, urllib.request
-from datetime import datetime
-import xml.etree.ElementTree as ET
-try:
-    from zoneinfo import ZoneInfo
-    NOW = datetime.now(ZoneInfo("Europe/Rome"))
-except Exception:
-    NOW = datetime.now()
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio",
-        "agosto","settembre","ottobre","novembre","dicembre"]
-MESI_ABBR = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"]
-TZ = NOW.tzname() or "CEST"
-UPDATED = f"{NOW.day} {MESI[NOW.month-1]} {NOW.year}, ore {NOW:%H:%M} ({TZ})"
-
-def b64(name):
-    with open(os.path.join(HERE, name), "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-arrow_black = b64("arrow_black.png")
-arrow_white = b64("arrow_white.png")
-
-# --- Fonti ufficiali (RSS) ---
-FEED_UPDATES = "https://www.microsoft.com/releasecommunications/api/v2/azure/rss"
-FEED_BLOG    = "https://azure.microsoft.com/en-us/blog/feed/"
-L_UPD    = "https://azure.microsoft.com/en-us/updates/"
-L_BLOG   = "https://azure.microsoft.com/en-us/blog/"
-L_GITHUB = "https://github.com/Azure"
-L_LEARN  = "https://learn.microsoft.com/en-us/partner-center/announcements/2026-july"
-
-def card(tag, tag_class, date, title, summary, source, link):
-    return dict(tag=tag, tag_class=tag_class, date=date, title=title,
-                summary=summary, source=source, link=link)
-
-def fmt_date(pubdate):
-    for fmt in ("%a, %d %b %Y %H:%M:%S %z", "%a, %d %b %Y %H:%M:%S %Z", "%Y-%m-%dT%H:%M:%S%z"):
-        try:
-            d = datetime.strptime(pubdate.strip(), fmt)
-            return f"{d.day} {MESI_ABBR[d.month-1]} {d.year}"
-        except Exception:
-            continue
-    return ""
-
-def clean(text, limit=240):
-    text = re.sub(r"<[^>]+>", "", text or "")
-    text = re.sub(r"\s+", " ", text).strip()
-    return text[:limit].rstrip() + ("…" if len(text) > limit else "")
-
-def fetch_rss(url, timeout=25):
-    req = urllib.request.Request(url, headers={"User-Agent": "AzureNewsHub/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        data = r.read()
-    root = ET.fromstring(data)
-    items = []
-    for it in root.iter("item"):
-        def g(tag):
-            e = it.find(tag)
-            return e.text if e is not None and e.text else ""
-        items.append(dict(title=g("title"), link=g("link"),
-                           desc=g("description"), pub=g("pubDate")))
-    return items
-
-def classify(title, desc):
-    t = (title + " " + desc).lower()
-    if "retir" in t or "end of support" in t or "deprecat" in t:
-        return ("Ritiro", "t-ret")
-    if "preview" in t:
-        return ("Preview", "t-prev")
-    if "generally available" in t or "general availability" in t or "now available" in t or " ga " in t:
-        return ("GA", "t-ga")
-    return (None, None)
-
-# --- Ritiri "pinned": sempre in evidenza (verificati su Microsoft Learn) ---
-pinned_ritiri = [
-    card("Ritiro","t-ret","dal 1 lug 2026","Reserved Instances non più acquistabili per le serie legacy",
-         "Dal 1° luglio 2026 non è più possibile acquistare o rinnovare le Reserved VM Instances (RI): RI a 1 anno per Av2, Amv2, Bv1, D, Ds, Dv2, Dsv2, F, Fs, Fsv2, G, Gs, Ls, Lsv2; RI a 1 e 3 anni per Dv3, Dsv3, Ev3, Esv3. Le RI già attive valgono fino a scadenza; poi pay-as-you-go o Azure savings plan. Cina esclusa.",
-         "Microsoft Learn","https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/manage-legacy-vm-reservations-after-july-1-2026"),
-    card("Ritiro","t-ret","da lug 2026","Limitazioni di capacità per le VM legacy (serie v2/v3/v4)",
-         "Da luglio 2026 Azure applica limitazioni di capacità alle serie VM legacy: potrebbe non approvare nuove quote, nuovi deployment o espansioni per D/Ds/Dv2/Dsv2/Dv3/Dsv3/Dv4/Dsv4, Ev3/Esv3/Ev4/Esv4, F/Fs/Fsv2, Av2/Amv2, B/Bs, G/Gs, Ls/Lsv2. Le VM già in esecuzione non sono toccate. Migrazione a v5/v6/v7; le serie v1 e v2 sono annunciate per il ritiro.",
-         "Microsoft Learn","https://learn.microsoft.com/en-us/azure/virtual-machines/migration/sizes/legacy-series-capacity-limitations"),
-    card("Ritiro","t-ret","30 set 2026","VM NVv3-series e NVv4-series (GPU) in ritiro",
-         "Il 30 settembre 2026 Azure ritira le VM GPU NVv3 (da NV12s_v3 a NV48s_v3) e NVv4. Migrare a NVadsA10_v5 (o NCasT4_v3 / NC_RTXPRO6000BSE_v6). Le RI per NVv3 sono già terminate.",
-         "Microsoft Learn","https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retirement/nvv3-series-retirement"),
-    card("Ritiro","t-ret","già ritirata · 30 set 2025","VM NCv3-series (GPU NVIDIA V100)",
-         "Le VM NCv3 (da NC6s_v3 a NC24rs_v3) sono già ritirate e non più creabili. Migrazione consigliata: NVadsA10_v5 o NCasT4_v3.",
-         "Microsoft Learn","https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retired-sizes-list"),
-    card("Ritiro","t-ret","elenco ufficiale","Elenco completo VM Azure in ritiro",
-         "Serie annunciate: D/Ds/Dv2/Dsv2 e Ls (1 mag 2028); Av2/Amv2, B v1, F/Fs/Fsv2, G/Gs, Lsv2 (15 nov 2028); M192_v2 (31 mar 2027); NP-series FPGA (31 mag 2027). Elenco sempre aggiornato su Microsoft Learn.",
-         "Microsoft Learn","https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retired-sizes-list"),
-    card("Ritiro","t-ret","30 set 2026","Runtime Python 2.7/3.8 e PowerShell 7.1/7.2 (Automation)",
-         "Dal 1° ottobre 2026 i runtime Python 2.7, Python 3.8 e PowerShell 7.1/7.2 non saranno più supportati in Azure Automation; i runbook restano attivi ma senza aggiornamenti di sicurezza.",
-         "Azure Updates", L_UPD),
-    card("Ritiro","t-ret","entro 31 gen 2027","Migrazione da Azure Blueprints",
-         "Microsoft invita a migrare da Azure Blueprints entro il 31 gennaio 2027, verso alternative supportate.",
-         "Azure Updates", L_UPD),
-]
-
-# --- Contenuti curati (partner + github) ---
-partner = [
-    card("Partner","t-partner","2026","Azure IP co-sell e Marketplace-first (FY27)",
-         "In FY27 il Microsoft Marketplace diventa il percorso primario per il co-sell su scala. Rilevante per il posizionamento CSP di Arrow.",
-         "Microsoft Learn — Partner Center", L_LEARN),
-]
-github = [
-    card("GitHub","t-gh","ufficiale","Azure su GitHub — organizzazione open source",
-         "L'organizzazione ufficiale Azure su GitHub: SDK, documentazione, AKS, Bicep e Azure Landing Zones.",
-         "GitHub — Azure", L_GITHUB),
-    card("GitHub","t-gh","ufficiale","Azure Landing Zones",
-         "Repository, moduli e pattern di deployment di Azure Landing Zones, mantenuti nell'organizzazione Azure su GitHub.",
-         "GitHub — Azure", L_GITHUB),
-]
-
-# --- Fallback se i feed non rispondono ---
-fallback_updates = [
-    card("GA","t-ga","2026","Network Security Perimeter per Azure Event Hubs",
-         "Il supporto al Network Security Perimeter per Azure Event Hubs è generalmente disponibile.",
-         "Azure Updates", L_UPD),
-]
-fallback_blog = [
-    card("Blog","t-blog","2026","Microsoft Foundry per l'era agentica",
-         "Aggiornamenti dal blog ufficiale Microsoft Azure.",
-         "Microsoft Azure Blog", L_BLOG),
-]
-
-# --- Costruzione liste da feed (con fallback) ---
-updates_ga, updates_prev, updates_ret, blog = [], [], [], []
-try:
-    for it in fetch_rss(FEED_UPDATES)[:60]:
-        tag, cls = classify(it["title"], it["desc"])
-        if not tag:
-            continue
-        c = card(tag, cls, fmt_date(it["pub"]), clean(it["title"], 120),
-                 clean(it["desc"], 240), "Azure Updates", it["link"] or L_UPD)
-        if tag == "GA" and len(updates_ga) < 12: updates_ga.append(c)
-        elif tag == "Preview" and len(updates_prev) < 10: updates_prev.append(c)
-        elif tag == "Ritiro" and len(updates_ret) < 8: updates_ret.append(c)
-except Exception as e:
-    print("Feed updates non disponibile:", e)
-    updates_ga = fallback_updates
-
-try:
-    for it in fetch_rss(FEED_BLOG)[:10]:
-        blog.append(card("Blog","t-blog", fmt_date(it["pub"]), clean(it["title"],120),
-                         clean(it["desc"],240), "Microsoft Azure Blog", it["link"] or L_BLOG))
-except Exception as e:
-    print("Feed blog non disponibile:", e)
-    blog = fallback_blog
-
-if not blog:
-    blog = fallback_blog
-if not (updates_ga or updates_prev):
-    updates_ga = fallback_updates
-
-# Ritiri = pinned + eventuali ritiri dal feed (dedup per titolo)
-seen = {c["title"].lower() for c in pinned_ritiri}
-extra_ret = [c for c in updates_ret if c["title"].lower() not in seen]
-ritiri = pinned_ritiri + extra_ret
-updates_grid = updates_ga + updates_prev + ritiri
-
-MS_LOGO = '''<svg class="ms-logo" viewBox="0 0 118 24" role="img" aria-label="Microsoft">
-  <rect x="0" y="0" width="11" height="11" fill="#F25022"/>
-  <rect x="12.5" y="0" width="11" height="11" fill="#7FBA00"/>
-  <rect x="0" y="12.5" width="11" height="11" fill="#00A4EF"/>
-  <rect x="12.5" y="12.5" width="11" height="11" fill="#FFB900"/>
-  <text x="30" y="17" font-family="'Segoe UI',Arial,sans-serif" font-size="16" font-weight="600" fill="#5E5E5E">Microsoft</text>
-</svg>'''
-
-def render_cards(items):
-    catmap = {'t-ga':'ga','t-prev':'preview','t-ret':'ritiro','t-blog':'blog','t-partner':'partner','t-gh':'github'}
-    out = []
-    for c in items:
-        cat = catmap.get(c['tag_class'], 'all')
-        out.append(f'''      <article class="card" data-cat="{cat}">
-        <div class="card-top">
-          <span class="tag {c['tag_class']}">{html.escape(c['tag'])}</span>
-          <span class="date">{html.escape(c['date'])}</span>
-        </div>
-        <h3>{html.escape(c['title'])}</h3>
-        <p>{html.escape(c['summary'])}</p>
-        <div class="card-foot">
-          <span class="src">{html.escape(c['source'])}</span>
-          <a href="{html.escape(c['link'])}" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
-        </div>
-      </article>''')
-    return "\n".join(out)
-
-def render_highlight(items):
-    out = []
-    for c in items:
-        out.append(f'''      <div class="ritem">
-        <span class="rdate">{html.escape(c['date'])}</span>
-        <h4>{html.escape(c['title'])}</h4>
-        <p>{html.escape(c['summary'])}</p>
-        <a href="{html.escape(c['link'])}" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
-      </div>''')
-    return "\n".join(out)
-
-HTML = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="it" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Azure News Hub — Arrow ECS</title>
+<title>Azure News Hub — Arrow Italia ECS</title>
 <style>
 :root{--azure:#0078D4;--azure-dark:#004E8C;--azure-deep:#003057;--bg:#f3f6fb;--surface:#fff;--ink:#1b1f27;--muted:#5b6472;--border:#e2e8f2;--shadow:0 2px 10px rgba(0,48,87,.08)}
 *{box-sizing:border-box}html,body{margin:0;padding:0}
@@ -214,6 +12,9 @@ body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:v
 a{color:var(--azure);text-decoration:none}a:hover{text-decoration:underline}
 .topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 28px;flex-wrap:wrap}
 .topbar .arrow{height:26px;width:auto;display:block}
+.topbar .brand-left{display:flex;align-items:center;gap:12px}
+.it-flag{height:18px;width:27px;border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,.12);display:block;flex:0 0 auto}
+.brand-name{font-size:1rem;font-weight:700;color:var(--ink);letter-spacing:.01em;white-space:nowrap}
 .topbar .brand-right{display:flex;align-items:center;gap:14px}
 .ms-logo{height:24px;width:auto;display:block}.divider{width:1px;height:26px;background:var(--border)}
 .brand-tag{font-size:.82rem;color:var(--muted);font-weight:600;letter-spacing:.02em}
@@ -257,6 +58,9 @@ main{max-width:1120px;margin:0 auto;padding:10px 28px 40px}.section{margin-top:3
 .src{font-size:.74rem;color:var(--muted);font-weight:600}.card-foot a{font-size:.8rem;font-weight:600;white-space:nowrap}
 footer{background:linear-gradient(135deg,var(--azure-deep),var(--azure-dark));color:#eaf3ff;margin-top:44px;padding:44px 28px 30px}
 .foot-wrap{max-width:1120px;margin:0 auto}.foot-arrow{height:30px;width:auto;margin-bottom:18px}
+.foot-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.foot-brand .foot-arrow{margin-bottom:0}
+.foot-brand-name{font-size:1.05rem;font-weight:700;color:#fff;white-space:nowrap}
 footer h2{color:#fff;margin:0 0 6px;font-size:1.4rem}footer .fsub{margin:0 0 24px;color:#bcd7f2;max-width:640px}
 .contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:1040px}
 .contact{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:18px 20px}
@@ -270,13 +74,23 @@ footer h2{color:#fff;margin:0 0 6px;font-size:1.4rem}footer .fsub{margin:0 0 24p
 </head>
 <body>
 <div class="topbar">
-  <img class="arrow" src="data:image/png;base64,__ARROW_BLACK__" alt="Arrow">
-  <div class="brand-right"><span class="brand-tag">Azure News Hub</span><span class="divider"></span>__MS_LOGO__</div>
+  <div class="brand-left">
+    <img class="arrow" src="data:image/png;base64,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" alt="Arrow">
+    <svg class="it-flag" viewBox="0 0 3 2" role="img" aria-label="Italia"><rect width="1" height="2" x="0" fill="#009246"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#CE2B37"/></svg>
+    <span class="brand-name">Arrow Italia ECS</span>
+  </div>
+  <div class="brand-right"><span class="brand-tag">Azure News Hub</span><span class="divider"></span><svg class="ms-logo" viewBox="0 0 118 24" role="img" aria-label="Microsoft">
+  <rect x="0" y="0" width="11" height="11" fill="#F25022"/>
+  <rect x="12.5" y="0" width="11" height="11" fill="#7FBA00"/>
+  <rect x="0" y="12.5" width="11" height="11" fill="#00A4EF"/>
+  <rect x="12.5" y="12.5" width="11" height="11" fill="#FFB900"/>
+  <text x="30" y="17" font-family="'Segoe UI',Arial,sans-serif" font-size="16" font-weight="600" fill="#5E5E5E">Microsoft</text>
+</svg></div>
 </div>
 <header class="hero">
   <h1>Microsoft Azure — News Ufficiali</h1>
-  <p class="sub">Aggiornamenti, novità e annunci ufficiali della piattaforma Microsoft Azure. Curato dal team Cloud di Arrow ECS.</p>
-  <div class="updated">Aggiornato al __UPDATED__</div>
+  <p class="sub">Aggiornamenti, novità e annunci ufficiali della piattaforma Microsoft Azure. Curato dal team Cloud di Arrow Italia ECS.</p>
+  <div class="updated">Aggiornato al 21 agosto 2026, ore 15:41 (CEST)</div>
   <div class="sources"><span>Microsoft Azure Blog</span><span>Azure Updates</span><span>Microsoft Learn</span><span>GitHub · Azure</span></div>
 </header>
 <section class="ritiri">
@@ -284,7 +98,72 @@ footer h2{color:#fff;margin:0 0 6px;font-size:1.4rem}footer .fsub{margin:0 0 24p
     <h2>⚠️ Ritiri Azure — da tenere d'occhio</h2>
     <p class="lead">Macchine virtuali e servizi che Microsoft dismette: pianifica la migrazione prima delle date indicate. Fonti ufficiali: Microsoft Learn e Azure Updates.</p>
     <div class="ritiri-grid">
-__RITIRI__
+      <div class="ritem">
+        <span class="rdate">dal 1 lug 2026</span>
+        <h4>Reserved Instances non più acquistabili per le serie legacy</h4>
+        <p>Dal 1° luglio 2026 non è più possibile acquistare o rinnovare le Reserved VM Instances (RI): RI a 1 anno per Av2, Amv2, Bv1, D, Ds, Dv2, Dsv2, F, Fs, Fsv2, G, Gs, Ls, Lsv2; RI a 1 e 3 anni per Dv3, Dsv3, Ev3, Esv3. Le RI già attive valgono fino a scadenza; poi pay-as-you-go o Azure savings plan. Cina esclusa.</p>
+        <a href="https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/manage-legacy-vm-reservations-after-july-1-2026" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">da lug 2026</span>
+        <h4>Limitazioni di capacità per le VM legacy (serie v2/v3/v4)</h4>
+        <p>Da luglio 2026 Azure applica limitazioni di capacità alle serie VM legacy: potrebbe non approvare nuove quote, nuovi deployment o espansioni per D/Ds/Dv2/Dsv2/Dv3/Dsv3/Dv4/Dsv4, Ev3/Esv3/Ev4/Esv4, F/Fs/Fsv2, Av2/Amv2, B/Bs, G/Gs, Ls/Lsv2. Le VM già in esecuzione non sono toccate. Migrazione a v5/v6/v7; le serie v1 e v2 sono annunciate per il ritiro.</p>
+        <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/migration/sizes/legacy-series-capacity-limitations" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">30 set 2026</span>
+        <h4>VM NVv3-series e NVv4-series (GPU) in ritiro</h4>
+        <p>Il 30 settembre 2026 Azure ritira le VM GPU NVv3 (da NV12s_v3 a NV48s_v3) e NVv4. Migrare a NVadsA10_v5 (o NCasT4_v3 / NC_RTXPRO6000BSE_v6). Le RI per NVv3 sono già terminate.</p>
+        <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retirement/nvv3-series-retirement" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">già ritirata · 30 set 2025</span>
+        <h4>VM NCv3-series (GPU NVIDIA V100)</h4>
+        <p>Le VM NCv3 (da NC6s_v3 a NC24rs_v3) sono già ritirate e non più creabili. Migrazione consigliata: NVadsA10_v5 o NCasT4_v3.</p>
+        <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retired-sizes-list" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">elenco ufficiale</span>
+        <h4>Elenco completo VM Azure in ritiro</h4>
+        <p>Serie annunciate: D/Ds/Dv2/Dsv2 e Ls (1 mag 2028); Av2/Amv2, B v1, F/Fs/Fsv2, G/Gs, Lsv2 (15 nov 2028); M192_v2 (31 mar 2027); NP-series FPGA (31 mag 2027). Elenco sempre aggiornato su Microsoft Learn.</p>
+        <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retired-sizes-list" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">30 set 2026</span>
+        <h4>Runtime Python 2.7/3.8 e PowerShell 7.1/7.2 (Automation)</h4>
+        <p>Dal 1° ottobre 2026 i runtime Python 2.7, Python 3.8 e PowerShell 7.1/7.2 non saranno più supportati in Azure Automation; i runbook restano attivi ma senza aggiornamenti di sicurezza.</p>
+        <a href="https://azure.microsoft.com/en-us/updates/" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">entro 31 gen 2027</span>
+        <h4>Migrazione da Azure Blueprints</h4>
+        <p>Microsoft invita a migrare da Azure Blueprints entro il 31 gennaio 2027, verso alternative supportate.</p>
+        <a href="https://azure.microsoft.com/en-us/updates/" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">18 ago 2026</span>
+        <h4>Retirement: Azure VMware Solution License-included service will be retired August 30, 2027</h4>
+        <p>In November last year, Broadcom changed its VMware licensing policies across all hyperscaler platforms to require customers to “bring your own” portable license for VMware Cloud Foundation (VCF).What’s changing?On August 30, 2027, as a resu…</p>
+        <a href="https://azure.microsoft.com/updates?id=569535" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">14 ago 2026</span>
+        <h4>Announcing: Azure Databricks Runtime 10.4 LTS will reach end of life on November 1, 2026</h4>
+        <p>Azure Databricks Runtime 10.4 LTS, a Databricks-managed runtime available on Azure Databricks, reached end of support on March 18, 2025 and will reach end of life on November 1, 2026. After this date, Databricks Runtime 10.4 LTS will no lon…</p>
+        <a href="https://azure.microsoft.com/updates?id=569353" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">12 ago 2026</span>
+        <h4>Retirement: Containerized data connector agent for the Microsoft Sentinel solution for SAP applications</h4>
+        <p>On September 14, 2026 we will retire the containerized data connector agent for the Microsoft Sentinel solution for SAP applications. After this date the agent will be permanently disabled and will stop sending SAP logs to Microsoft Sentine…</p>
+        <a href="https://azure.microsoft.com/updates?id=568457" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
+      <div class="ritem">
+        <span class="rdate">5 ago 2026</span>
+        <h4>Retirement: Nested confidential (cc_v5) VMs will be retired on September 1, 2026</h4>
+        <p>On September 1, 2026, the cc_v5 confidential VM series will be retired and will no longer be available for use or purchase. Any affected VM that has not been resized before that date will deallocated. The impacted VM sizes that will be reti…</p>
+        <a href="https://azure.microsoft.com/updates?id=568661" target="_blank" rel="noopener">Dettagli e guida di migrazione →</a>
+      </div>
     </div>
   </div>
 </section>
@@ -300,30 +179,578 @@ __RITIRI__
 </div>
 <main>
   <section class="section"><h2><span class="bar"></span>In evidenza — Azure Blog</h2><p class="lead">Annunci e approfondimenti dal blog ufficiale Microsoft Azure.</p><div class="grid">
-__BLOG__
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">17 ago 2026</span>
+        </div>
+        <h3>Microsoft named a Leader in the 2026 Gartner® Magic Quadrant™ for Cloud-Native Application Platforms</h3>
+        <p>Cloud-native platforms are becoming the foundation for AI transformation. Discover how Microsoft&#x27;s Azure application platform helps organizations modernize, innovate, and operate AI-powered applications at scale. The post Microsoft named a…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/microsoft-named-a-leader-in-the-2026-gartner-magic-quadrant-for-cloud-native-application-platforms/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">12 ago 2026</span>
+        </div>
+        <h3>The Economics of Agent Optimization: From pilots to measurable returns</h3>
+        <p>Learn how AI cost management helps organizations move from AI pilots to measurable ROI through greater visibility, governance, and optimization. The post The Economics of Agent Optimization: From pilots to measurable returns appeared first…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/the-economics-of-agent-optimization-from-pilots-to-measurable-returns/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">6 ago 2026</span>
+        </div>
+        <h3>Microsoft named a Leader in the 2026 Gartner® Magic Quadrant™ for AI-Augmented Code Modernization Tools</h3>
+        <p>GitHub Copilot and Azure are helping organizations modernize legacy applications, reduce technical debt, and prepare for AI innovation. The post Microsoft named a Leader in the 2026 Gartner® Magic Quadrant™ for AI-Augmented Code Modernizati…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/microsoft-named-a-leader-in-the-2026-gartner-magic-quadrant-for-ai-augmented-code-modernization-tools/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">27 lug 2026</span>
+        </div>
+        <h3>What customers value most in Microsoft Databases—from reliability to AI readiness</h3>
+        <p>Every day, customers trust Microsoft Databases to power their most critical applications, business processes, and AI-powered experiences. The post What customers value most in Microsoft Databases—from reliability to AI readiness appeared fi…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/what-customers-value-most-in-microsoft-databases-from-reliability-to-ai-readiness/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">23 lug 2026</span>
+        </div>
+        <h3>AT&amp;T and Microsoft scale trillion-token workloads with Microsoft Foundry and AMD</h3>
+        <p>AT&amp;#38;T processed approximately one trillion tokens while developing OTel2.0 using Microsoft Foundry Managed Compute, open AI models, and AMD and NVIDIA GPU infrastructure. Discover how flexible model choice and scalable infrastructure are…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/att-and-microsoft-scale-trillion-token-workloads-with-microsoft-foundry-and-amd/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">15 lug 2026</span>
+        </div>
+        <h3>Azure Databricks delivers proven business value</h3>
+        <p>Microsoft Azure Databricks delivers the first-party advantage of Databricks on Microsoft—and for customers, that advantage shows up as real, measurable value. It is the same Databricks platform your teams already know, co-engineered with Mi…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/azure-databricks-delivers-proven-business-value/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">9 lug 2026</span>
+        </div>
+        <h3>GPT-5.6 now available in Microsoft Foundry</h3>
+        <p>Introducing OpenAI&#x27;s latest frontier model series, the Asia Pacific Data Zone, and product agent capabilities, all generally available in Microsoft Foundry. The post GPT-5.6 now available in Microsoft Foundry appeared first on Microsoft Azu…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/gpt-5-6-now-available-in-microsoft-foundry/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">8 lug 2026</span>
+        </div>
+        <h3>Built to bounce back: How Azure resiliency evolved</h3>
+        <p>Cloud resiliency is about ensuring systems can adapt, recover, and keep functioning within real-world constraints. The post Built to bounce back: How Azure resiliency evolved appeared first on Microsoft Azure Blog.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/built-to-bounce-back-how-azure-resiliency-evolved/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">7 lug 2026</span>
+        </div>
+        <h3>External key management for Azure Managed HSM is now in public preview</h3>
+        <p>Azure Key Vault Managed Hardware Security Module (HSM) provides strong sovereignty over your encryption keys. Keys are generated and stored in a single-tenant, FIPS 140-3 Level 3 HSM that only you control: Microsoft has no access to your ke…</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/external-key-management-for-azure-managed-hsm-is-now-in-public-preview/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="blog">
+        <div class="card-top">
+          <span class="tag t-blog">Blog</span>
+          <span class="date">2 lug 2026</span>
+        </div>
+        <h3>Meet Brain: The AI system behind Azure reliability</h3>
+        <p>Learn how Microsoft is building a digital twin of Azure Service Health and why it changes how hyperscale operates. The post Meet Brain: The AI system behind Azure reliability appeared first on Microsoft Azure Blog.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Azure Blog</span>
+          <a href="https://azure.microsoft.com/en-us/blog/meet-brain-the-ai-system-behind-azure-reliability/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
   </div></section>
   <section class="section"><h2><span class="bar"></span>Azure Updates</h2><p class="lead">Novità di servizio dal feed ufficiale Azure Updates — GA, Preview e ritiri.</p><div class="grid">
-__UPDATES__
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">20 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Summarized advertised gateway prefixes for route advertisement</h3>
+        <p>Summarized advertised gateway prefixes for route advertisement is now generally available. You can specify aggregated (summarized) prefixes for an Azure gateway to advertise to your on-premises networks, rather than having every individual…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569743" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">19 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Azure Databricks Lakebase in four additional regions</h3>
+        <p>Lakebase is now generally available in four additional Azure regions: North Central US, France Central, Germany West Central, and East Asia. This expansion provides customers with additional deployment options and broader regional availabil…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569684" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">19 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Azure SQL updates for mid-August 2026</h3>
+        <p>In mid-August 2026, the following updates and enhancements were made to Azure SQL: You can customize keyboard shortcuts for Quick Queries, the Results Grid, and the Query Editor directly within Visual Studio Code—without leaving your editor…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569145" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">19 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Azure SQL Database provisioning in MSSQL extension</h3>
+        <p>With Azure SQL Database provisioning, you can create and connect to a fully managed cloud database directly from your editor—at no cost. Now generally available, the feature also includes ready-to-use Azure Resource Manager (ARM), Bicep, an…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569160" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">19 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: vCore Customization: Disable Multithreading and Configurable Constrained Cores</h3>
+        <p>Today, we are announcing the General Availability of VM vCore Customization for Azure Virtual Machines, introducing two new capabilities: Disable Simultaneous Multi-Threading/Hyper-Threading (SMT/HT) and Configurable Constrained Cores. Thes…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569051" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">19 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: BYON (Bring Your Own NIC) in Azure Site Recovery</h3>
+        <p>Azure Site Recovery now lets you use and attach an existing, pre-provisioned Network Interface Card (NIC) in the target region for test-failover and failover in the Azure-to-Azure scenario. This helps preserve prepared networking configurat…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569515" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">18 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Managed Instance on Azure App Service</h3>
+        <p>Managed Instance on Azure App Service is now generally available. Managed Instance helps organizations migrate web applications to Azure App Service with minimal configuration and no code changes. Applications running on-premises or in virt…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568952" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">17 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Dragon Copilot Physician Apps and Agents on Microsoft Marketplace</h3>
+        <p>This release adds Microsoft Marketplace as a new discovery and procurement channel for Dragon Copilot AI apps and agents. Dragon Copilot customers in the United States can now discover, evaluate and purchase Dragon Copilot Physician Apps an…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=557775" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">13 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Control plane metrics collection for AKS with Managed Prometheus</h3>
+        <p>Control plane metrics collection for Azure Kubernetes Service (AKS), powered by Azure Monitor Managed Service for Prometheus, is now generally available.This capability gives AKS customers native observability into key managed control plane…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568830" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">13 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Live Resize for Shared Premium SSD v2 and Ultra Data Disks</h3>
+        <p>We’re excited to announce the GA of Live Resize for shared Premium SSD v2 (Pv2) and Ultra data disks. This feature allows you to dynamically expand the storage capacity of your disks without any disruption to your applications. To optimize…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569281" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">13 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Pre-upgrade validation checks for Azure Database for PostgreSQL Flexible Server</h3>
+        <p>Pre-upgrade validation checks are now generally available for Azure Database for PostgreSQL flexible server, helping you proactively validate major version upgrade (MVU) readiness before initiating the actual upgrade process. With the gener…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568419" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ga">
+        <div class="card-top">
+          <span class="tag t-ga">GA</span>
+          <span class="date">12 ago 2026</span>
+        </div>
+        <h3>[Launched] Generally Available: Batch rule updates for Azure Front Door</h3>
+        <p>Batch rule updates are now generally available for Azure Front Door Standard and Premium. This capability enables customers to add, update, delete, or reorder multiple rules in a rule set as a coordinated operation, ensuring that all change…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569246" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">19 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: SQL Formatter in MSSQL extension</h3>
+        <p>With SQL Formatter, you can format SQL scripts directly in your editor for cleaner, more consistent, and readable code. Now in public preview, it includes more customizable formatting options to match your preferred coding style and streaml…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569155" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">18 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Ipv6 support in Azure Firewall</h3>
+        <p>Azure Firewall now supports IPv6 in public preview, enabling customers to configure Azure Firewall and Firewall Policy in dual-stack mode for both IPv4 and IPv6 traffic. This preview allows native IPv6 network-rule filtering and DNS Proxy s…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569520" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">17 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Zone redundancy for Azure SQL Managed Instance Next-gen General Purpose</h3>
+        <p>You can now benefit from enhanced resilience with the public preview of zone redundancy for Azure SQL Managed Instance Next-gen General Purpose. This update helps you improve business continuity by automatically distributing your compute an…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568344" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">17 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Azure Linux on WSL</h3>
+        <p>Azure Linux on WSL is now available in Public Preview (Beta). Extending Azure Linux to the developer workstation means that teams can now:Validate behavior using production-aligned configurationsReproduce issues more reliablyReduce time spe…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569376" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">12 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Azure Front Door mutual TLS</h3>
+        <p>Mutual TLS, also known as client certificate authentication, enables Azure Front Door to authenticate clients using X.509 certificates before requests reach an application. It helps protect sensitive applications and APIs across business-to…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569251" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">12 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Markdown for Agents in Azure App Service</h3>
+        <p>Today, we are announcing the public preview of Markdown for Agents in Azure App Service. This feature gives AI agents and other tools a cleaner way to consume content from an App Service app. When a client requests Markdown, App Service can…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568979" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">7 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Azure ExpressRoute resiliency guard</h3>
+        <p>Azure ExpressRoute resiliency guard is now available in public preview for ExpressRoute virtual network gateways. The new resiliency model property lets you specify whether a gateway is intended for a single-homed or multi-homed configurati…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568666" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">6 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Migrate from AWS FSx for Windows File Server to Azure Files with Azure Storage Mover</h3>
+        <p>Azure Storage Mover now supports agentless, cloud-to-cloud migration from AWS FSx for Windows File Server (SMB) to Azure Files (SMB), in preview. You can move your Windows file shares off FSx and into Azure Files without deploying or managi…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=567979" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">4 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Perimeter link feature in network security perimeter</h3>
+        <p>Perimeter link (cross-perimeter connectivity) is a network security perimeter capability that allows trusted resources in two different network security perimeters to securely communicate with each other using Managed Identity (MSI), withou…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568837" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="preview">
+        <div class="card-top">
+          <span class="tag t-prev">Preview</span>
+          <span class="date">4 ago 2026</span>
+        </div>
+        <h3>[In preview] Public Preview: Azure Private Link support over IPv6</h3>
+        <p>Azure Private Link over IPv6 enables you to privately access Azure PaaS services, such as Azure Storage and Azure SQL Database, over IPv6-based connectivity. You can now use IPv6 private endpoints to connect from IPv6 clients in an Azure vi…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568842" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">dal 1 lug 2026</span>
+        </div>
+        <h3>Reserved Instances non più acquistabili per le serie legacy</h3>
+        <p>Dal 1° luglio 2026 non è più possibile acquistare o rinnovare le Reserved VM Instances (RI): RI a 1 anno per Av2, Amv2, Bv1, D, Ds, Dv2, Dsv2, F, Fs, Fsv2, G, Gs, Ls, Lsv2; RI a 1 e 3 anni per Dv3, Dsv3, Ev3, Esv3. Le RI già attive valgono fino a scadenza; poi pay-as-you-go o Azure savings plan. Cina esclusa.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Learn</span>
+          <a href="https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/manage-legacy-vm-reservations-after-july-1-2026" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">da lug 2026</span>
+        </div>
+        <h3>Limitazioni di capacità per le VM legacy (serie v2/v3/v4)</h3>
+        <p>Da luglio 2026 Azure applica limitazioni di capacità alle serie VM legacy: potrebbe non approvare nuove quote, nuovi deployment o espansioni per D/Ds/Dv2/Dsv2/Dv3/Dsv3/Dv4/Dsv4, Ev3/Esv3/Ev4/Esv4, F/Fs/Fsv2, Av2/Amv2, B/Bs, G/Gs, Ls/Lsv2. Le VM già in esecuzione non sono toccate. Migrazione a v5/v6/v7; le serie v1 e v2 sono annunciate per il ritiro.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Learn</span>
+          <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/migration/sizes/legacy-series-capacity-limitations" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">30 set 2026</span>
+        </div>
+        <h3>VM NVv3-series e NVv4-series (GPU) in ritiro</h3>
+        <p>Il 30 settembre 2026 Azure ritira le VM GPU NVv3 (da NV12s_v3 a NV48s_v3) e NVv4. Migrare a NVadsA10_v5 (o NCasT4_v3 / NC_RTXPRO6000BSE_v6). Le RI per NVv3 sono già terminate.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Learn</span>
+          <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retirement/nvv3-series-retirement" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">già ritirata · 30 set 2025</span>
+        </div>
+        <h3>VM NCv3-series (GPU NVIDIA V100)</h3>
+        <p>Le VM NCv3 (da NC6s_v3 a NC24rs_v3) sono già ritirate e non più creabili. Migrazione consigliata: NVadsA10_v5 o NCasT4_v3.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Learn</span>
+          <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retired-sizes-list" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">elenco ufficiale</span>
+        </div>
+        <h3>Elenco completo VM Azure in ritiro</h3>
+        <p>Serie annunciate: D/Ds/Dv2/Dsv2 e Ls (1 mag 2028); Av2/Amv2, B v1, F/Fs/Fsv2, G/Gs, Lsv2 (15 nov 2028); M192_v2 (31 mar 2027); NP-series FPGA (31 mag 2027). Elenco sempre aggiornato su Microsoft Learn.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Learn</span>
+          <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/lifecycle/retired-sizes-list" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">30 set 2026</span>
+        </div>
+        <h3>Runtime Python 2.7/3.8 e PowerShell 7.1/7.2 (Automation)</h3>
+        <p>Dal 1° ottobre 2026 i runtime Python 2.7, Python 3.8 e PowerShell 7.1/7.2 non saranno più supportati in Azure Automation; i runbook restano attivi ma senza aggiornamenti di sicurezza.</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/en-us/updates/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">entro 31 gen 2027</span>
+        </div>
+        <h3>Migrazione da Azure Blueprints</h3>
+        <p>Microsoft invita a migrare da Azure Blueprints entro il 31 gennaio 2027, verso alternative supportate.</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/en-us/updates/" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">18 ago 2026</span>
+        </div>
+        <h3>Retirement: Azure VMware Solution License-included service will be retired August 30, 2027</h3>
+        <p>In November last year, Broadcom changed its VMware licensing policies across all hyperscaler platforms to require customers to “bring your own” portable license for VMware Cloud Foundation (VCF).What’s changing?On August 30, 2027, as a resu…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569535" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">14 ago 2026</span>
+        </div>
+        <h3>Announcing: Azure Databricks Runtime 10.4 LTS will reach end of life on November 1, 2026</h3>
+        <p>Azure Databricks Runtime 10.4 LTS, a Databricks-managed runtime available on Azure Databricks, reached end of support on March 18, 2025 and will reach end of life on November 1, 2026. After this date, Databricks Runtime 10.4 LTS will no lon…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=569353" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">12 ago 2026</span>
+        </div>
+        <h3>Retirement: Containerized data connector agent for the Microsoft Sentinel solution for SAP applications</h3>
+        <p>On September 14, 2026 we will retire the containerized data connector agent for the Microsoft Sentinel solution for SAP applications. After this date the agent will be permanently disabled and will stop sending SAP logs to Microsoft Sentine…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568457" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="ritiro">
+        <div class="card-top">
+          <span class="tag t-ret">Ritiro</span>
+          <span class="date">5 ago 2026</span>
+        </div>
+        <h3>Retirement: Nested confidential (cc_v5) VMs will be retired on September 1, 2026</h3>
+        <p>On September 1, 2026, the cc_v5 confidential VM series will be retired and will no longer be available for use or purchase. Any affected VM that has not been resized before that date will deallocated. The impacted VM sizes that will be reti…</p>
+        <div class="card-foot">
+          <span class="src">Azure Updates</span>
+          <a href="https://azure.microsoft.com/updates?id=568661" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
   </div></section>
   <section class="section"><h2><span class="bar"></span>Per i partner</h2><p class="lead">Aggiornamenti dal Microsoft Partner Center rilevanti per l'ecosistema Cloud di Arrow.</p><div class="grid">
-__PARTNER__
+      <article class="card" data-cat="partner">
+        <div class="card-top">
+          <span class="tag t-partner">Partner</span>
+          <span class="date">2026</span>
+        </div>
+        <h3>Azure IP co-sell e Marketplace-first (FY27)</h3>
+        <p>In FY27 il Microsoft Marketplace diventa il percorso primario per il co-sell su scala. Rilevante per il posizionamento CSP di Arrow.</p>
+        <div class="card-foot">
+          <span class="src">Microsoft Learn — Partner Center</span>
+          <a href="https://learn.microsoft.com/en-us/partner-center/announcements/2026-july" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
   </div></section>
   <section class="section"><h2><span class="bar"></span>GitHub — Open source ufficiale Azure</h2><p class="lead">Repository e progetti open source mantenuti dall'organizzazione ufficiale Azure su GitHub.</p><div class="grid">
-__GITHUB__
+      <article class="card" data-cat="github">
+        <div class="card-top">
+          <span class="tag t-gh">GitHub</span>
+          <span class="date">ufficiale</span>
+        </div>
+        <h3>Azure su GitHub — organizzazione open source</h3>
+        <p>L&#x27;organizzazione ufficiale Azure su GitHub: SDK, documentazione, AKS, Bicep e Azure Landing Zones.</p>
+        <div class="card-foot">
+          <span class="src">GitHub — Azure</span>
+          <a href="https://github.com/Azure" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
+      <article class="card" data-cat="github">
+        <div class="card-top">
+          <span class="tag t-gh">GitHub</span>
+          <span class="date">ufficiale</span>
+        </div>
+        <h3>Azure Landing Zones</h3>
+        <p>Repository, moduli e pattern di deployment di Azure Landing Zones, mantenuti nell&#x27;organizzazione Azure su GitHub.</p>
+        <div class="card-foot">
+          <span class="src">GitHub — Azure</span>
+          <a href="https://github.com/Azure" target="_blank" rel="noopener">Apri fonte ufficiale →</a>
+        </div>
+      </article>
   </div></section>
 </main>
 <footer>
   <div class="foot-wrap">
-    <img class="foot-arrow" src="data:image/png;base64,__ARROW_WHITE__" alt="Arrow">
+    <div class="foot-brand"><img class="foot-arrow" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABFwAAADwCAYAAAA96HBPAABA9ElEQVR4nO3dd7xcZ3Xu8d856pKLLPcebBlbtmTJFTdik0a53BByuZAESEiA3CQXCCUu2JhiTDAmtAAhhBIIIYFwSUJJCCUBgzsukovcZLnKTXJRsWXVc/94pfjo+JyZ2TN77/W8ez/fz4cPYEuzn9mzz5x516x37aGRkRHMzMzMzMzMzFpkb+AXgfnAYcAcYBawAVgD3AXcBlwGLAUKF08ml5XUzMzMzMzMzEzYHsDvAq8Bjinw9x4G/gn4W+D6Xv/SkDtczMzMzMzMzKzBdgfOB94IzBzwsX4AnAdc0+0PuuACk4D9Se1DM4Gh2DiV2ASsA1YAq4OzWO/2Jb0x7ES6Ti3eBmAtcD/wZHAWS12aBwK70tz379yMAE+RftfcB2yOjdNqw8ABwGzS7xH/fFhbbCH9jn4YeCQ4iw1m723/mUV6T1OzhbTGehhYGZzFOns9cDFpzV+WrcBngT8jffYZVxsLLlOAXwJeCpxK2q81JTRRvR4Brgb+C/hX0r4003AS6bp8AXA06QOy6bofuBL4T+Cf8Ye6OkwDXgL8Gmm/7WG06/07N5uAZcBPSd8E/RupaGnVmAT8CvBi4HRgHulnxqzN1gHXkt6HvrXtf5uu+cBvAmcAJ5DXZ+G1pG6H7ddaz1tOrFKzgC8Cr6zwGEtJ1+1t4/3LNhVc9gTeSqpu7R0bRcYI8GPg48B3YqO01nTgDcBbSItHy9Nm0mLyQ8AVwVmaaH/Stwe/B+wWnMX69wTwZeAvSAVLK8cc4E+BPwT2Cc5ipm4p8EnSAmxjcBZLhkmL4beTiixNcSPpWvsS6QsIq9+epM/ndVxXjwL/A7hq7L9oQ8FlKnAWcA6pwmXjuxp4E/Dz6CAt8tvAR0hbh6w5/o1UQFseHaQBZgLvAt5Bei+3ZtgIfAx4P96aN4jJwNuAd5PXt8BmCu4hFfL/X3SQljsN+DSps7up7iIVk/41OEfb7ErqNqrz2lpD6sBeMvofNr3gsgD4GnBkdJBMbCXtbTsf77uv0u6kb3n/R3QQq8x6Ukfd3wTnyNnxwNeBQ6KDWGXuAl6FC/39OIx0p4RFwTnMcvdNUve7ZxzWawqpK/ittGe+1NdJw1rXRgdpgUnAD0ljGur2AHAsaa4P0OyCy/8CvgLMiA6SoZ+Q9qE9HpyjiY4EvgccFB3EavG3pDZ/FzCLeS3wedzV0gYbST8jX44OkpEXAt8Ado4OYtYQy0izj5ZFB2mJ3UgzTp4fHSTAbaRrzTM0q/V+Uod0lB+R5g2OQHMLLq8HPkd7KqZVuIlUFVwVHaRBjicNjvQMinb5LqmA6f27vXkz8An8/t0mI6StMZ+IDpKBVwD/gIdFm5XtYdJNNZZGB2m4PUnzI4+KDhLoQdJQ4NuDczTV0cB1xN/h9Q3AF6CZBZf/TdpGpHjrsNxcT6o+e4/94J4LXEr6RWPt84/Aq9lW6bYJvQb4O1xsaaMR4HWk19/G9yukGVHu/DKrxgrSHSM91LsaOwGXkLZbtN29pGvtweggDXQJaY5KtFWkbfFrm1aUWEhqS27a84pyDP7wW4ZZpEFZLra012+ThnfbxI4lbSNysaWdhkidqcdHBxF1MGlmi4stZtXZnzRE1z9n1fgiLrZsdxBpa+jk6CAN84toFFsA9gD+GJpVmJhOarP1zJZy/SZpwJP172PAvOgQFu5CmnW7wzLNIA2TmxYdxEJNJV0HM6ODiBkifb7xdlSz6j2P2NkPTfVG0i4Ee8apwDujQzTMW6MDjPEWYLhJW4rOBy6IDtFQT5C2xKwMzpGjU0hbifytvUHaU3oC6Y5g9ozo4Wam5c+B86JDCPlD4LPRIcxaZBMwH8/YKMs+pGGxu0QHEbSBdEON5dFBGmA2aRaTWofarzalw2Uv4JzoEA02G3h3dIhMfRgXW+wZxwK/Ex1CzD7An0WHMCnvAPaNDiFiBqkgaWb1mYJ/7sr0Plxsmcg00vmxwb0YvWILwMuaUnB5C25Brtrr8QySos4gdbiYjeb20R29nbQl1Gy7aaSii6W7HOwVHcKshV4B/EJ0iAbYH/j96BDifhs4IDpEA6jMbhnrl5pQcJlEKgZYtWYAr40OkRnPvrHxHAmcFh1CxBTSnWnMxnodvvUxpO1EZla/YVLB0wbzJ/i9vBuvZctxenSACRzRhILLC0gt6VY9b4Xo3Uzg5dEhTNarowOI+FXcOWfj2x14UXSIYAtIcyTMLMYrogNkbgh/3unV/4oOkLlZpHmjioabUHBp+weyOh2LF0e9Og3fMcsm9mvRAUT4PFgnbb8+2v78zaIdTrp9r/XnGNIt7a27BbiBYBCLSJ1CkppQcHlJdIAWGQJeGB0iE8+PDmDSDgH2iw4hQHW/rWlo+/uofz7M4p0cHSBjvxwdIDO+1vp3THSATnIvuOwGHBEdomXa/gG4V0dGBzB5bb9GhkjfHppN5HDy/5wyiHnRAcyM50UHyJhvHFGMr7X+HRsdoJPcP8icgW+5Wzd/49ab50QHMHltv0b2xneXs86m0+7bQ7f9PcJMgfQ35+J87orx+eqfCy4V8uK/focDc6JDZGDX6AAmr+3XSNufv/WmrdfJTGBydAgzY2F0gEzNxvNbiloUHSBTUxDf8eKCixU1hO5tt5T4m3vrpu3XSNufv/WmrddJW5+3mZrdSHPXrJjjogNkaC/gwOgQGToamBYdooOtORdcZpFOsNXPha7uvNXNumn7NdL252/WiX8+zHRIb1cQ5XPWH28rKk79Wrs954LL83G7bRQPzjUzMzOzNvAiuDifs/6oFw8UqZ+z63IuuLjLIs5CUoeRmZmZmVmTqS/oFPmc9ceFquLUz5kLLtaXycBp0SHMzMzMzCrmwbnFzAQOiw6RKReqihkG5keH6CLbgstUPIwpmrcVmZmZmVnT7QvsFx0iI8eQ/41ZohwA7B4dIiNHor/rYnGuPwwnA9OjQ7ScO4zMzMzMrA3cedA7n6vBuKmgd+rbiZYDj+dacPFiP97xpPuem5mZmZk1mfrCTonP1WB8/nqnXty7DvJt93LBJd4M4KToEGZmZmZmFVNf2CnxuRqMz1/v1M9VtgWXScCJ0SEM8BwXMzMzM2s+dx30ZiowLzpE5tSLCEoWRAfoItuCy3HALtEhDHDBxczMzMya72BgdnSIDCwgFV2sf4cCO0WHyMBcYLfoEF0shjwLLt5OpOMk8ryGzMzMzMyK8DDT7twJNLgh3OXSC/VzdD/wMOS5WHbBRcdsYFFwBjMzMzOzqqkv8BT4HJXDhavu1M/Rddv/R44Fl5OjA9gOvK3IzMzMzJrOxYTufI7K4fPYnfo5yrbgsgDYIzqE7cAdR2ZmZmbWdOrfqEcbBuZHh2gIX2vdHR0doIvrt/+P3AouXtzrOSU6gJmZmZlZxQ4DZkaHEDYPmBUdoiHmAdOiQwg7ANgnOkQX2Xa4uOCiZx/giOgQZmZmZmYVGsadB5343JRnMrAwOoQw9e1Eq0hDc4H8Ci7uptDkOS5mZmZm1nTqC71IPjflcgFrYurX2rWj/09OBZe5pPYh0+OCi5mZmZk1nRfBE/O5KZd6USGS+rm5bvT/mRyVog/q24k2AKsreuxZaO+JVH9tbEePA5uiQ9RkF2B6dAjLzgiwMjpEjfYEhqJDWFZWkn5OzMo2Cdg9OkQH6gu9SMpbYNYDa8f8M/VrzQWsiamfGxdcKvIx4J0VPfbvAV+q6LHLcDCwH/BAdBDrya8Dl0aHqMlXgd+JDmHZWQfsHR2iRo8Ds6NDWFYOo7ovmazdZgFr0O3CnwdMBTZGBxFzCLBbdIgOPgS8b8w/2xV4ov4oPZtPKgptiQ4iZg76u152KLiovpmNR33bys8qfOyfVvjYZTkjOoCZmZmZZe1J4NboEB1MBRZEhxCk3vlz/Tj/bDVwR91BCpgBHBkdQtAJ0QG6WA3cNfof5FJw2YdUOVW1Fbi8wse/C3i4wscvg3oHkpmZmZnpu677HwmlXlyIoH5OJrqmxivEKFE/rxFy2E60w5bbXAouL4gO0MUNVN+S9l8VP/6g1DuQzMzMzEyf+iJYfcEXQfmcPMqoW/SOoV7cUz6vUdSLUM+6pnIpuKh3T1S5najOYwxiHtp7N83MzMxMn/oiWH3BF2FRdIAOru3w79SLe77Wnk39nGRbcFHvnqhjxor6HJch4PToEGZmZmaWtSXRAbpYQD5rqDrsRxr/oKpTAW9xXSH6tBDfRXC0ndAeMwKZFlxmoz8w6LIajnEL+ncEUC+MmZmZmZm2x4Hl0SE6mEnq7LZEveOgUxfLI0y83UjBLsDc6BBCjkO7APUUcPvYf5hDweUMtE/sHcCDNRxnK/CTGo4zCPWtX2ZmZmamT31bkWdrPEP9XHS7ltSvNfWCVp3Uz8X1pDX7DnIouKgv4uucraI+x2UhqepvZmZmZtYvz9bIh/K5WAfc2eXPqF9r6gWtOqmfi3GLdzkUXNS3qdQ5W0V9jssU4NToEGZmZmaWNXcd5EP5XDzrFr0T/Bllyue3burnIsuCy0y0p15DvV0nS4D1NR6vH+odSWZmZmamTX1w7sLoACJ2Aw6KDtFBL8UU9YLLougAIqYBh0eH6GLcbin1gsvzgcnRITp4kHqHem0ELq3xeP1Q70gyMzMzM20PAg9Eh+hgNnBodAgBx0UH6KKX7UL3A49VHWQAewIHRocQsAjtusAGYOl4/0K94KLeLXFJwDHV57icQNpaZGZmZmbWL8/W0Kd+DnrtXrmm0hSDU99KUwf1c3AjsGm8f6FecFHvlogofqjPcZkJnBgdwszMzMyypr7VQ30BWAflc7ABuLXHP+vinj7law06vF8pF1ymAsdHh+giouByDbA54LhFqBfKzMzMzEybesHFi2Dtc7CE3tdM6teaerGhDurnIMuCy0nAjOgQHTwB3Bxw3CeBqwKOW4T6VjAzMzMz06bedbAoOkCwWcBh0SE6KHL9qF9ryoWtOkwGjowO0UWWBRf1RfvPgK2Bx1Z2EjAUHcLMzMzMsnUP6QtOVfsA+0WHCLQI7bVkka6VO4F1VQUpwQHA7tEhAs0HpkeH6GAzaYbLuJR/SNS3pUQWPdTnuOyGb5dnZmZmZoO5NjpAF+rbHKqk/tyLdK1sRX9bkfodoaqkfq0tBZ6e6F+qFlyGSV0SyiKLHlcBI4HH74V6h5KZmZmZaVNfBKsvBKuk/Ny3ADcV/Dvq24qUz3fV1LdUdXyfUi24HAfsEh2ig/XE/gJ4DFgcePxeqHcomZmZmeVoKml7wX6kz8uqn+fLoL4IVl8IVkn5ud9MWq8VoV7cUz7fVVMvNnW8dibXlaIg9e6IK5jgPts1+hnaP3guuJiZ5cEzt8y0nQT8Kumz1TzSPIfRNgLLgBuAHwP/BqyoM2CF1BfB6gvBqkxFe4hpP4U69eJeW6+1IWBBdIgusuxwUV+sK8xQUcjQyd7Ac6NDmJlZV+pbVM3aaBfgHFIh5QrgAlLRZWyxBZ5Z/P4W8FngXuCHwEtrSVqtO4CnokN0cBBpdmHbLACmRIfooJ9C3a3AhrKDlOhQYOfoEAEOR/t5j5BuQT4h1YLLqdEBulC4S9Dl0QF6oF44MzMzM1MyGXg76Q49HyQtsooaBn4F+A5p4an+ubqTreh3HrRxmKl6t0U/18wmUpeYqiG0dzdURf1au40ud7hSLLjMB/aIDtHBZtLQ2mgPkl5gZepbw8zMzMxUHA78HPgIMLukxzyG9EXhp4BpJT1m3dS3FbVxEaz8nLt2HHSgfq2pFx+qoP6cu14zigUX9UX6tcCT0SG2Uei06cQdLmZmZmbd/TpwDbCogsceAv4vqTt63woev2rqHS7qC8IqKD/nZcCaPv+u+rWmXOiqivpzzrLgor5IV5qdopRlPM8hTdA3MzMzs/G9DvhnYKeKj3MscBnp81lO3HWgZRjtIaaDXC++1vQsjA7QRZYFF/V9pkpdJUpZJnJ6dAAzMzMzUS8HPg9Mqul4zwF+AOxV0/HKcAvpTkyq5gKzokPUaB4wMzpEB4MUTW4CtpQVpAJHkO/WwH48B9g9OkQXi7v9AbWCy6HAgdEhOhghfTOg4m7SLBdl6h1LZmZmZhHmA1+lvmLLdnOBbwYct18bgRujQ3QwjP62hzKpd1kMsi1oPbC0rCAVmIx+x0eZ1H+u7gIe7/aH1Aou6vNbbgIeiw4xxo+jA3ThgouZmZnZjqYB3wBmBB3/NOA9Qcfuh2dr6FB/rosH/PveVqRD/bn2dK2oFVzUF+eKW3jU57gcSXmT9s3MzMya4BzS9oDoDPOCM/TKi2Adys/1PmDlgI/h4p4O5WsNMi24qHe4KBZcFDONNoz+62pmZmZWl31IxY5oU4CLo0P0SL3g0qZFsPKWljKuE/VrTb0IUSblaw0yLLjsQ5rhokyxuHELPewdC+aCi5mZmVnydmB6dIhtXor+ogbSDJet0SE6OBKYGh2iBoei3bleRnfKDaS5narmk2a5NN2+6N/ttqfrTangckZ0gC6WAyuiQ4xjBLgkOkQX6lvFzMzMzOowFXh9dIgx/ig6QA+eIn3JqGoK2rdKLot6J08Z3SmrgWUlPE5VppMKfE2n3smzAni4lz+oVHBRX5Qrdrdspz7H5Ri0bx9nZmZmVocXA3OiQ4zxKlLBQJ36bA31BWIZ1J9jWdeI+rYi9cJXGdSvtZ6vEaWCi/q2E+WihnIxCNIv8VOiQ5iZmZkFe1F0gHHsBpwYHaIH6otg9QViGZSf46PA/SU9lot78dSLStkVXHZDvzVKuaixBFgXHaIL9Q4mMzMzs6qdHh1gAqq5RlNfBKsvEMuwKDpAB9eU+Fjqxb02XGvqRaXsCi6/iE6W8TwC3BEdooNNwOXRIbpQ72AyMzMzq9IU4LDoEBNQ/+IT0heMyhYAk6JDVGh/YO/oEB2UWZBTv9YWAkPRISo0Gzg4OkQX2RVc1Lsf1IfSgvaWJ4Dn0Y6J2mZmZmbjORjdz0JzowP04HHSTSxUzQSOiA5RIfWuijK7Uh4B7ivx8cq2C7rF2zIcFx2gi1UU2L6mUnBR735Q3k60nXrGGcAJ0SHMzMzMgsyODtDBrtEBeqS+1UN9G8Qg1J9b2VvOvIUtjvq1dm2RP6xQcNkJ7f2AoF/MALiatLVImXphzczMzKwqs6IDdKCcbTT1gkuTF8HKz20tcGfJj6l+rakXJQah/twKXRsKBZdT0L4V3RrghugQPXgauCo6RBfqW8fMzMzMqqI8c0FhTdAL9a4D9YXiIJSf2/XASAWPqUy5ADYo9eeWXcFFfRF+KbA1OkSP1Oe4nIz2hw0zMzMz07U4OkAXC6MDVGQOcFB0iA6q6EZR73BZFB2gIjPRn0+TXcFFfZtJDtuJtlPPOgc4OjqEmZmZmWXpIeCB6BAdzAYOjQ5RAeXuFqimOHI/8GgFj1uWPYEDo0NU4Fg0ahQTWQ3cVeQvRD+ZqegPUlUvYox2JfrdOOodTWZmZmamS73zQL040Q/151TV9p9Cw1EDqL8u/VDfTlR4+1p0weV5pLvXqHoauCY6RAFPoN9qqd7RZGZmZma6PFujfsrP6Wng1ooe28W9+qk/p8LXRHTBRb3b4SpgQ3SIgtTnuJwaHcDMzMzMsuVFcP2Un9MNwOaKHtvFvfopX2uQYcFFvdshp+1E26ln3g+YGx3CzMzMzLKkXnBZFB2gZLPQ/uxe5fWgfq2pFyeKmgrMiw7RRVYFl2HgpMDj90K9W2Q8l0cH6IF6oc3MzMzMNN0LPB4dooO9gf2jQ5ToGOK/pO+kyi6UO4G1FT7+oPYH9ogOUaKjgSnRITp4Crit6F+K/OE5Ftg18PjdbCENoc3NQ1S3j7Es6lvJzMzMzEyX+jDTJm31UH8uVXahjKC/rei46AAlUu/YWUwfN6iJLLioL7qvR7ui2Yl6Z476a29mZmZmutQXweoLxyKUn8tm4KaKj6G+rUi9IFaE8rUGfV4LkQUX9W0l6kWLTtTnuBwK7BMdwszMzMyypL4IVl84FqH8XJaS7lJUJRf36qNePMqu4KJ+txr1okUnOcxxOT06gJmZmZllSX0RrL5w7JX6ENM6Cm/qxb2mXGuTgPnRIbrIquByFLBn0LF7dVl0gAEsJw0UU6be4WRmZmZmmu4AnowO0cFBwJzoECVQH2JaR+HtVmBDDcfp16HAztEhSnAkMDM6RAcbSR1VhUUVXNRneCwFVkaHGJD6lij1a8DMzMzMNG0lDbBU1oStHurdE3V0n2wGltRwnH4N4WutDjcAm/r5i1EFF/Xuhpy3E22n/hyOQvsuVWZmZmamS32rRxMWwcrPYYS0CK6Dt7BVT/lagwHeb6IKLp7fUj31Dpdh9AtvZmZmZqZJveDShEWw8nO4A1hT07HUrzX1YkUv1J9DVgWXQ0j7GpVdGh2gBLcBj0WH6MLbiszMzMysH+pdB+oLyG4mAQuiQ3RQ5+uvfq0pF8Z6MUSaF6Qsq4KL+iL7nm3/yd0I8JPoEF2oXwtmZmZmpmkpaZClqrnATtEhBjAP7SGmdXad3AhsqfF4RR0BTI8OMYC5aI+a2Ey6BvoSUXBR30bShO1E26k/l2OBGdEhzMzMzCw7mxhgEVSDYWBRdIgBqHdN1FlweRq4ucbjFTUZ/Q6RTtS7wW4hXQN9ccHl2dSLFEWoz3GZCpwcHcLMzMzMsuTZGtVRz173nYPUtxWpv16dNLq4V3fBZW9Sy5Ay9SJFETcAT0aH6EK9AGdmZmZmmtQXweoLyU6Us98LrKz5mC7uVUc9e1YFl9NrPl5Rq0jDZptiM/odO57jYmZmZmb98CK4OouiA3QQUWhzca86i6IDdJFVwUW9m+FnpGGzTaJecHkead+hmZmZmVkR6sNM5wHTokP04VC0h5hGFNqWoL1OnE+ea6qDgD2jQ3QwwoDb11xw2VGTthNtp/6cZgHHR4cwMzMzs+w8BdwaHaKDKWjfWnki6p05Ed0ma4BlAcft1XTgyOgQfVDvzLkdWDvIA9RZcJkNHFXj8fqh3g3Sj2vQvmUeeFuRmZmZmfVHfVuR+oJyPOqZo15z9WtNvVA2HvXMA7/mdRZcnl/z8YpaByyODlGBp4Ero0N04YKLmZmZmfVDfbaG+oJyPMqZVwErgo6tXnBRL5SNR/lag8wKLurbiS5Dew/oINQ7d04FhqJDmJmZmVl21BfB6gvK8SyKDtDBtYHHdnGvfOpFIhdcSqRelBiE+hyXOaRBT2ZmZmZmRQw00LIGC4BJ0SEK2B/YOzpEB5EFtsWBx+7FQvL6EnsP0vWmbOAiW10Fl5noV6+aXHC5EtgaHaIL9YKcmZmZmel5ArgzOkQHM0h3K8qFepdEZJfJSuC+wON3szNwWHSIAtRvnHIX8PigD1JXweUU0pRuVRuBq6NDVGgN+u2WnuNiZmZmZv1Q3+qh/sXzaOpZo9c00cfvRr1gNlorrrW6Ci7q3QtXk4bLNpl6B89p0QHMapbjbSLN6nZ0dAAzy4IXweVRzroWWB6cwcW98ihfa+CCS6nUixFlUJ/jsj9waHQIsxr9JvqtlGbR3gNMiw5hZvLUCy45LYKVs14HjAhkUKZexBhNPWs2BZcpwIk1HGcQbSi4XB4doAfeVmRtMgRcHB3CTNxBwJ9GhzAzeYujA3SxiDyGmc4hve+qUuguUcjQyaLoAD3aBXhOdIguSnmt6yi4nEgaFqVqK3kUIwb1CLA0OkQXLrhY27wAeEl0CDNx5wC7RYcwM2kPAyuiQ3SwK3l0ch8XHaALhe6S+4FV0SE62APtotl2x6JdhFxBel8ZWB0FF/XtREuA1dEhaqLeyaN+rVh+ottOe3ER9W3vNMvRbsC50SHMTJ5654HyVp3t1DMqFFwAro0O0IX66wj624lKez9xwUW/CFEm9Tkuc4G9o0NYo6yLDtCDBcDvRoewVtsQHaAHbwIOjA5hZtJUFuMTUV9ggnbGp4HbokNso17cU34dt1MvCpX2flJ1wWUYOLniYwxKvQhRpsuiA/Tg9OgA1ihrogP06AJgenQIa60cfk6mAxdGhzAzaeqLYPUFJmhnXAJsjg6xjYt7g1PPmE3BZRFpz6KyS6MD1Oge4O7oEF14jouV6cHoAD06EHhLdAhrrcejA/ToNfg20WY2MfVFsHIxA2AnUre5KqWCmlKW8ahfazOAw6NDdJFNwUV9O9HtlDQMJyPqW6hccLEy3RgdoAAPBrUot0QH6NEw8KHoEGYm617gsegQHewF7B8dooNFaM+UUyqo3QmsjQ7Rwf7AntEhOlgETIoO0cEq4L6yHqztBZc2bSfaTv05L0C/K8rysTg6QAG7AedFh7BWuiE6QAEvIt3dy8xsPEqL8vEob6NQzgZaXSUjaOUZj/Lrqd6BU+r7SNUFl1MrfvxBqXd7VEH9OQ8Dp0WHsMZYBfw8OkQBbyKPW/lZs6gX4se6GO1bSZpZHPWCi/JCUznbZuCm6BBjqF9rygUX5WyQUcFlHql1Tpl68aEKt6F973jwtiIr1zejAxQwDQ8GtfpdQ2rFz8XxwKuiQ5iZJHcd9E8521LSXYqUqBdclAtoytcaZFRwUd9OtAK4KzpEkEuiA3Shfu1YXv4OvV/SnbwaWBgdwlrna9EBCroQmBIdwszkqC+CVRea00hflqtSfF1d3OvPFODI6BBduOBSktxaqMuk/tyPw7fItfI8CHwxOkQBHgxqET5OXoXJQ4E/jg5hZnKWAU9Gh+jgQGD36BDjWIB2EVux4HIr2r83DwF2iQ4xjvmkAp+qNcDyMh+wyoKL+raQNm4n2k79uU8FTooOYY1yEdq/FMd6IfDL0SGsVR4EPh8doqB3oflh0szibMWdB/1QzDSa4mu6Ge2h80NobitSv9auIw1FLk1VBZdfIFVwlal3eVTpBrRvZQb6HVKWl/uAT0SHKOgiPBjU6nUhsC46RAF7AmdFhzAzOYqL89EUF8GKmbYbAZZEh5iAYufNaIrFDeVrDSp4TasquKgvlh8jDV9qqy3ApdEhulDvkLL8XET62c/F8cBvRYewVnkY+HB0iILeCuwTHcLMpHgRXJxipu3uQPeLYhf3ilO+1sAFl9JcSsmtQhlS7/A5CZgcHcIa5QnyuwPQ+9HeU23N81FS4SUXs4ALokOYmRT1govaIngSaYaLKuXXUzkb6BU3hoGjo0N04YJLSdRnmNRB/RzshN6bhOXvr4B7okMUcCjwJ9EhrFXWAe+NDlHQ7wOHR4cwMxm3ABujQ3Qwl/Q5V8U8YEZ0iA6Uu0huIs1yUXUEWjciOZz0RYmqp4Dby37QKgouewGHVfC4ZVLv7qjDNcCG6BBdeFuRlW0DcG50iILOA3aODmGt8nkq+MBRocmkLYNmZgCb0B5mOoxWl4v6F5zKXSRPoz2mYhKwMDrEKOrX2mLS6I1SVVFwOb2CxyzTU2hXSuuyAbgyOkQX6p1Slqd/JK/3gD2Bs6NDWKtsBs6JDlHQbwCnRIcwMxnqv+eVCi5KWcazODpAF8oFIdB6fdULLpW8b1RRcFFfJF9BqnybfqfPqfguLVa+EfK7s8nbgH2jQ1ir/Avp92VOLo4OYGYy1BfBSgtPpSxj3Qusig7RhXpxT+n1VSr+jKeS9402FlzUiwx1Up/jsjtwVHQIa6QfAd+PDlHATOB90SGsdc6MDlDQqaROFzMz9UWwysJzCK0tJ2OpF85AP6NSwWVRdIAusii47ArML/kxy6ZeZKjTlVSwT61knuNiVTkH2BodooA/IA0/M6vLZaROl5z8OWnPupm12w1of8Y9EpgWHYI0nH/X6BAdqBfOAJagfffb+Wjc+fUQYLfoEB1sBG6u4oHLLrg8v4LHLNMm4KroEELWol+VdcHFqrIY+PvoEAVMwoNBrX7non0HhrHmAa+PDmFm4daT7lakajIat2JW6bSZiPo6BdJ66o7oEB1MQ2PHgFKnzXhupKKxI2UXR9S3E11DGpprz1DfYnVadABrtPPRv1vXaC/Dg0GtXrcCX4gOUdB7SdvwzKzd1LsjFBagChk6UX8Nt1PPqVBYU8jQSWXFvbYVXLyd6NnUz8mBwHOiQ1hj3Qv8ZXSIgj4cHcBa573Ak9EhCtgXeHt0CDMLp94dobAAVcgwkZXAiugQPVK/1hQKawoZOsmi4DID/ROpXlyIcFl0gB54W5FV6YPA49EhCjgFeHl0CGuVh4CPRIco6Exgj+gQZhZKvetAYd2kXHBRL2KMpp5V4XVeFB2giywKLqcAU0p8vLKNkEdxoW6rqGhAUInUO6csb4+TBm3mxINBrW5/ATwSHaKAXYB3R4cws1CL0R5muoDY3+UHAHsFHr8b9SLGaIujA3SxkHRHqij7AfsEHr+bLaQZLpUos+Civii+kby+xa6T+hwXd7hY1T5J2l6UiyOAN0SHsFZZS363Jv8/pLsimFk7rQaWR4foYAZp0HcUha6HTnIquKxC+3PkzsBhgcdX6ObqZClp0HYl2lRw8Xaiiamfm+eiXYG3/G0A3hUdoqD34MGgVq+/QftODGNNJb/uNTMrl/qiPXIhqr4IVt8SNpZ6Xl9rE6v0faKsgssU4MSSHqsq6l0ckS6NDtAD9YKe5e+rwJLoEAXsC7wjOoS1ymbgndEhCnolcFx0CDMLo74IjuwyUe5wWYN2d9J4XNybmPK1BpkUXE5A/5vWHIoKUe4D7ooO0YW3FVnVtgJnRYco6Exgz+gQ1irfBK6MDlHAEHBxdAgzC+NFsOaxu7ke7fk743Fxb2LK1xpkUnBR7z64E3ggOoQ49Q4g9WvMmuEHwI+iQxSwMx4MavXLrTD5S8CLo0OYWQj1RfAiYoaZ7g4cGHDcXqkXysajnjmq4DIHOCjo2L0YoeIO97YUXNRnlChQP0cLSHedMKvaWeT1rYoHg1rdfgZ8OzpEQR+k3Ll1ZpaHR4AV0SE62AU4NOC46h0H6oWy8awAVkaH6GB3Ygof6tfa7aQbA1SmjA8fw6RbQitT795QoH6OJgGnRoewVrieNM8lF1PwYFCr3zmk2yjmYiHwmugQZhZCvfMgYkGqvghWf80mop7b19qzVf6alVFwWQjsWsLjVEm9e0PBHaRvAZSpd1JZc5xPunNRLl4JHB8dwlrlFuCL0SEKej8wLTqEmdVOvVsiYquH8hDT9cCt0SH6pF5wiXjd1Qsulb8/lFFwUV8EPwQsiw6RiUuiA3ThwblWl7uBT0eHKGAI+FB0CGud9wJPRYco4CDgzdEhzKx26otgdx3s6Aby6qAcTb24F/G6Kxf3IJMOF/WCi/pWGSXqnUDHA9OjQ1hrfAB4IjpEAR4ManV7APhodIiCzgVmR4cws1qpL4LrXpDuBMyt+ZhFqBfIOlHPXnfBRf1ag0w6XNTnaqgXEZSoF6emAc+LDmGt8Rhp0GZOLsKDQa1eF6M9JHCs3UhFFzNrj3uBR6NDdLAncECNxzuGmDsj9Uq9QNbJcmBNdIgO9gP2qvF4x6D9ufRu0uf9Sg16Ao4A9i4jSIVccOndjWi/SYC3FVm9/hK4LzpEAUcDr40OYa2yFrggOkRBb0b7dqhmVj71zoM6u1xav8WjQiPoF4zq7HJR3roGNV1rgxZc1LcTrSYVEaw3W9EvUKlfc9YsT5MG6ObkArz1zur1WeDO6BAFTCcN0DWz9vAiOOZYRW0GbooOMSD1a83FvWe44FKCS0lFBOudesHlJNItos3q8hXyKtx6MKjVbRPwzugQBb0WWBAdwsxqo9414UVwcjN53SVyPOrXmot7z8ii4HJaKSmqo148UKQ+x2VntH9RWPNsBc6KDlHQO0mzKszq8g3g6ugQBQzjO3uZtYl610FdC9NpwJE1Hasf6q9TL9QLLnWto6YB82o6Vr/kCy4Hb/uPMvXigaJrSdsolKl3Vlnz/AfwX9EhCvBgUIuQW2HyxcAZ0SEmoN6dOxIdwKygZcC66BAdHAjsUcNxjgYm13CcfqkXK3pxG7A+OkQHhwC71nAc9WvtAeDhOg40SMFFfdG7nlQ8sGI2AldEh+jCg3Mtwlnktch4Ex4MavW6BPhudIiCLkbzbh1PRgfoQj2f2VhbgcXRIbqoo/NAvUu8CQWXzcAN0SE6GAIW1XAcbyfapskFl6tIxQMrTn0rlvpWNmuma4GvRYcoYDpwYXQIa51zgC3RIQo4AXhldIhxPI3uHIN15PUam22nvpivY4GqvAgeAZZEhyiJ+taotl9rkEnBRb3LwNuJ+qd+7vZAe/+pNdd55FXIfQ0eDGr1uhn4UnSIgj4ATIkOMQ7VOz+p5jLrRn0R3PYOl9vR3vZVhIt72tcaZFBw2Qs4vMwgFVDv0lB2FakdTpl6wc+a6S7gr6JDFDBM2jJhVqf3oL1/faxDgT+KDjGOm6MDTEA1l1k3bV8ETyLN1VClXhArQv25VF0MmYz+F37yBRf17USbgSujQ2RsHfrzb9SvQWuuC4HV0SEKeBHwgugQ1iorgI9FhyjofNJd8JSodpteEh3ArE+3oLtVD2Au1b4PzSNtN1alXhAr4ka0v7w+AphR4eMfifa1tgq4r66DNbXgcj3NaUmLot4h5DkuFuVR4KLoEAWpDga15voQ6QNNLvZE7y5L/xEdYBwjwPejQ5j1aRNpIayq6mGm6jM11LtCitgALI0O0UHV3U7eTjRKvwUX9e0cqt8K5UT9HB6E/m3Jrbk+QfoWPxfHozkY1JprDfD+6BAFvQ3YJzrEKMtIW3yVXArcEx3CbADqXRRVFkVccKmXrzVd8gWXXdHe/wf63Rk5uBz9W+Cqd1pZc60nbUHIiepgUGuuvwaWR4coYBbw3ugQY3wmOsAYannMilJf1FfZGaDcdXAPqYO4SdQLLlVeD+oFl1rfB/opuJzW59+rywjpGxgbzKPATdEhulDvtLJm+zL6PyOjqQ4GtebaCJwbHaKg16N1U4CvAndHh9hmGfBP0SHMBqS+CK5qoVr1dqVBqRfC+qH+nKq81hZW9Nhlke9wUe8qWErzKqRR1DuF1K9Fa7atwNnRIQpSHAxqzfZPwDXRIQqYDHwwOsQom4Ezo0Ns8w5gS3QIswHdiPZ1PA+YVsHjHgrsUsHjlkW9ENaPJWjvFphPNZ3Ph6H9WXMNcGedB+yn4KLeVaBeJMiJ+hyXw0mDDs2i/Dvwk+gQBSgOBrVmGyG/a+7lwMnRIUb5f8B3gzP8M/Dt4AxmZVhPuluRqslUM7rBWzzqtxa4IzpEB9NIdxMqWw7XWq2FsKIFlxnAcVUEKZELLuXJYWuWegHQmu8stL/BGOttwL7RIaxVfkwqTubk4ugAY/w+cH/Qse8B3hB0bLMqqC/uq5itoTy/BZrZ4QL6z6uK4oh6waX216RoweVkYGoVQUrkgkt5VlBzy1UfvK3Iov2cvOYaKA4GteY7h7QNLxenAS+LDjHKKuDXSa3QdXoC+J/A4zUf16xKXgRreQR4IDpERVzc0yNfcFFf3N4N3BcdomHUC1jucDEF5wGbokMU8AfAEdEhrFVuJA2azskHgUnRIUa5nlT8WFvT8VYDLyW9dmZNol5wadsiWP31GIT6c6uiEKd8rUEGBRf1xa16cSBH6nNcFqI9mMna4U7yul2q2mBQa4d3A09HhyhgHqk4qeSnwBlU/23wfaQv2S6r+DhmERajvRX4aNLv6bIcgPbMQ/UukEGoP7eFlHv34YOB3Ut8vLI9BdxW90GLnOApwElVBSmJenEgR+pFrEnAqdEhzID3U3+7/yB+AzglOoS1yv3Ax6NDFPReYGZ0iDGuI93e9XsVPf53SN9Q3lDR45tFq/0uJQVNJxV8y6K8nQj0u0AG8Shwb3SIDnYi3VWoLOrdLUsIuEtZkYLL8eh96BhLvTiQo2XAQ9EhulDvvLJ2WAV8KDpEQWqDQa35LiJ9AM3FfqRB02pWAi8BfovytlLfA/xv0qyYnF4js36odx6UuXBVXwQ3ueAC+s+vzOvDxb1xFCm4qM9vWUlAi1BLqHcOqV+b1h4fJ6/Bb6eSOl3M6rIauDA6REFnAXtEh5jA14G5wBvp/4PkNaStU4eRbkFt1gbqi+AyF67Ki+DVwF3RISqmXtxry7UGGRRc1LsI1IsCOVM/tyeQ7iVvFu0p0pyKnKgNBrXm+yvSkPtc7AKcHx2ig43A54HjgKOAd5C2BS3n2XeG2kLaSvEt4O2kbQsnAH9LXoO/zQalvghuS4fL9WjP0ylDm4p7ytcaiBdchtGfk+HtRNVRP7fTgBOjQ5ht8yVgaXSIAo4AXh8dwlplI3BudIiC/gg4JDpED5YCHyVtCzqU9PtxDmlo5pxt/38uqbPtY8CtISnN4qkXXBYBQyU8zh7AgSU8TlXUX4cyqD/Hsooke5O24araCNwcceBeCy5HA7MrzFEG9aJAzm4CnogO0YW3FZmKLcDZ0SEKei/6M7qsWb6G/rd+o00FPhAdog+bgceBFdv+u/ZhgWaiHiEN8la1C6loOih3HMRbQRp9oWoO6e5Cg1LfTnQjQZ2cvRZc1Beza0lTh60aW4FLo0N0ob7lzdrlu+hvxRttX9L2ArO6jJBmo+TkVaRtO2bWDOqdB2UsYNUXweqvQVnUC0tlFOZc3JtArwUX9cXsZfhbm6qpLx5PwXMoTEtui8kz0R0Mas30n8B/RIcoYIj87kRmZhNTXwQ3veCynvZsa/S1Fs8FlwF5O1H11M/xzqT9rmYqrgK+ER2iAPXBoNZMZ/Pswa7Kfhl4YXQIMyuFendF07sOltCeL8zVCy5lXCfqBZewn/deCi6Hk4bgKFMvBjTBtaRKtDL1wqC1z7nkdeePXAaDWnPcAHwlOkRBH6LYXR7NTFPTF8E7k4Zkq1IveJVJ/bkOWiyZDTynhBxV2UL6vBGilw8M6vNbNgBXR4dogU3AFdEhulC/Vq19lgGfjQ5RQK6DQS1v5wNPR4coYCHw6ugQZjaw+4BHo0N0sCfpDmP9WkQ5dzqqinrBq0zLgTXRITrYD9hrgL+v3EkFcAuBjQO9FFzUuwauJhVdrHrqc1xOiw5gNo4LSIO9c+HBoFa3+4C/jA5R0PtJt1g2s7ypL/oH6TzwFg8dI+g/3yZfa6E/503ocPF2ovqon+s9gSOiQ5iNsRK4ODpEAUPkldea4YPAY9EhCjgYeFN0CDMbmHrBZZDOAeWug03ATdEhaqZ+rbngUpFuBZcDKee+3FVS77pokivRn0ehXiC0dvoY8GB0iAJ+CXhRdAhrlSeAP48OUdC5pH3rZpYvdx3EWEr7diioX2tNLe6BeMHl9FpS9G8L+nNFmuQp0vBcZepb4KydngTeEx2iIA8Gtbp9CrgnOkQBc4B3Rocws4Godx30u5CdDswrM0jJ1M97FdSfc78Fupmkm+yoGgEWRwbo9mFaffG6BO0BRE2k3lGkfs1ae30RuDU6RAFHA6+JDmGtsgF4V3SIgt5C6gY2szwtQ3vO2oHAHn38vQXA5JKzlEm926MKt6J9x9fnALv28fcWof0F3R0E/4x3Oznq2zPUF/9NpD7H5WDgoOgQZuPYApwTHaIgDwa1un2V4G+iCppOGoxtZnkK//a7B/10HihvJwL9bo8qhN6auAdD9NdR5e1EXXQquOQwgFR98d9El5F+OSlzl4up+hZwaXSIAg4C3hwdwlplBDgrOkRBvwvMjw5hZn1T77Zo2iJ4K2mXQhuFL/676Oe6cXGvi04FF/XuFshr4dIUjwM3RofoIodr19ort8WkB4Na3X4I/CA6RAHDpJlHZpan8AVZF03rcLkDWBcdIoh6ca9p1xoI/Hx3KriodwncCjwSHaKl1LdyqV+71m5XAN+MDlHAbqSii1mdzka/m3K0lwBnRIcws76oL4KLdh1MJs1wURW+AA6k/tyLFk+mAkdVEaRE4T/fOXe4eDtRHPVzP4/+BoyZ1eVcYHN0iALejAeDWr0WA38fHaKgi6MDmFlf1G9RPBfYucCfn0eaL6UqfAEc6CZgU3SIDg4HZhT48/OBKRVlKcPdwGPRISYquOwCLKwzSB/UF/1NlsO5d5eLKbsd+JvoEAVMJw3QNavT+WgvgsY6AXhldAgzK2wz+sNMFxX488rzW0C/y6NKG0gFPlWTKFYD8HaiHkxUcDmtw79TkcOiv6keJN1GT5kLLqbuAvLaw/xatFuUrXnuAT4VHaKgD6D9bZ+ZjU+966LIwlZ9Eax+rqum/vyLFOxc3OvBREUV9cXqfaQWIYvjOS5mg3kY+HB0iAKGgYuiQ1jrfAB4IjpEAXOBP4wOYWaFSSzMOmhKweUeBLZ4BPO1Vh+Jcz00MjLuTLrLgFNqzlLEPwCvjg7Rcq8D/jY6RAcjwMrA4++BbpfY8/EdvlTMInWL7RMdpICyhpVPBuaU9FhlW0vaWmsaziSv+SgbyatIZPWZQhpErmgFcEB0iEAnAldFh+igyPvK7qStIYr+BfjN6BDBTkN7p0aRa015vQOwL/BQdIjJ4/yzGcDxdQcpSPkibQv1DpchYK/oEGZdPAm8D/hMdJAC/HNldfsk8CbgoOggPZqKf07McnMDsAXdQkVT3lfUt9PUYTGwFd1CRVOutQcRKLbA+C/0SaQTrUx9sd8Gy4EHokOYNcDngduiQ5gJe5o0QNfMrCpPA7dEh2gBiS0ewdYBd0SHaAGZa228gov67ItH8RuiChe+zAa3GXhndAgzcX8PLIkOYWaNJrNAazB3uCQ+D9WT+Xker+Dyi7WnKOZS0nwOi+etXWbl+Bfg8ugQZsK2AmdHhzCzRpNZoDXUw7g7fjtfa9WTOcdjCy5TgJMjghTgrgodfi3MynNmdAAzcd8H/jM6hJk1lrsOquXz+wyfi+rJFlyOA2ZGBCnAXRU6bsa3djMry+WkThczm9hZuMvVzKqxGL+/VElmASzABZdqPQrcGx1iu7EFF/X5LU/iC1TJCL69sFmZ3kma6WJm47sO+MfoEGbWSGuAO6NDNJjXcM94FLgnOkSDSRX3xhZc1Oe3XI4XI2rccWRWntuAL0SHMBN3HrAxOoSZNZLUQq1hfG535AJUdaSuteEx//u0qCA98uJej+e4mJXrvaRuPjMb393Ap6NDmFkjeRFcjdXA8ugQYqSKAg0jdW5HF1wWALODcvTKBRc91+HFoVmZHgI+Eh3CTNyFpA/wZmZlklqoNYgLWc/mc1IdqZ/j0QUX9fktG4GrokPYs2wGrogOYdYwHwYeiQ5hJuwx4IPRIcyscbwIrobUAliEz0k15GYxjS64qM9vuQZYHx3CxuXOI7NyrQPeFx3CTNwngPujQ5hZo6zE7ytVcCHr2R7AX65V4XrE7jaWU4eLF/W6PMfFrHx/A9wRHcJM2NPA+dEhzKxx3HlQPp/T8fm8lE/unG4vuDwX2CcySA9ccNF1Fb5jhFnZNpNuE21mE/s74MboEGbWKO7GKNdTpLsw2rP5WiufbMFFvbtlK3BZdAib0HrSli8zK9c3gSujQ5gJ2wqcHR3CzBpFbsGWuRuALdEhRPlaK5/cOd1ecFGf33Ij8ER0COvIHUhm1TgzOoCZuO8BP44OYWaN4a6DcsktgIX43JRLspsql4KLF/P6PMfFrBqXAt+ODmEm7izEhuSZWbbuA1ZFh2gQF7AmdhewOjpEg0h2Uw0DBwK/EJyjGy/m9V1Gau02s/Kdg+AvEDMh1wBfjw5hZo3hIkF53MUxsRF8rZVJ8lobBk6ODtEDd7joW02qKpo+L9zzcwvwxegQLbI5OoD15Tw8wN2sX+4Q25Hkwi1Dm4CbokOIc8GlPJI/t8PACdEhulgGPBQdwnriwlge1kYHsL68h7Q31aq3LjqA9WU58JnoEGaZ8u+XHUku3DJ0My6Ed+NrrTyS53IYmBsdogtvJ8qHX6s8eF9ynh4EPhodoiX8M5KvC4E10SHMMuQ5Ejty10E5fB678zkqx0ZEu6mGgX2jQ3Throl8+LXStwZ3jOXsYmBldIgWkJtwbz1bBVwUHcIsQ3dFBxCzDHcEl0Gy40DMrcD66BANcBNpC5ucYWBqdIguvIjPx8PA7dEhrKMl0QFsIGuBC6JDtIB/TvL2cWBFdAizzCyNDiBmBBcLynB1dIAMbAEWR4dogKuiA0xkGO07yzwA3Bkdwgr5YXQA6+i/ogPYwD5L+ubNquOfk7ytB94dHcIsM/6C89mujA6QudXAtdEhMnFFdIAGkP3sNgw8Eh2iA7/55+e70QGso29HB7CBbQLOjQ7RYA+QbjFsefsyaVijmXX3JHB5dAhBP4gOkLnv4Dtj9srX2mDWA9+PDjGRYeDe6BAduOCSnx+Shnuanptxe2xTfAO36Vblq2h3flpvtgBnR4cwy8Q3gaejQwj6KZ6bNoivRAfIyI+Bx6NDZOxbCM9cGkZ7Aea73uRnC/DJ6BA2ro9HB7BSnRkdoIE2AZ+ODmGl+TfgkugQZhn4XHQAUZuBL0aHyNQteMxAERuBL0WHyNjHowN0MjQyMnIUmrdQWgnsTRpaZXnZlTRjYo/oIPbf7gaei+j0buvbt4Bfjw7RIJ8H3hgdwkp1ImkOw1B0EDNRPwVOjw4hbH/SZ9rp0UEy82rgH6JDZOZg0s1H1G9oo+aHwK9Fh+hkmLTNQHEA43/gYkuuVgPnRYewHbwVF1ua6G24DbwsT+D3rSa6Gvi76BBmokaAs6JDiFsBfCo6RGauBv4xOkSG7gE+Ex0iM5uBP4sO0c3wtv9W/KH4anQAG8jn8AAoFV8jdUJY8ywHLooO0RBvQXuIvPXvbNIXAWa2o79G+FaqQt5HWgxbdxuBN+Avzfv1blKRz3rzIeCG6BDdDI2MjADsS3ojmRIb57/dARyBBxfmbm9Slfug6CAtdjtwPMKDpGxgk4DvAb8aHSRjXwReHx3CKvU7+Iscs9FuIm25Wx8dJBPPJ912dnJ0EHFvwbMcB/UC0jaZSdFBxF1GOlfyHfzbO1weRGtg1kW42NIEDwMvBR6LDtJSDwEvwsWWptsCvIpUXLPivg/8UXQIq9w/AB+ODmEm4hHgN3CxpYifAX8aHULc53GxpQw/JoNtMsGWA68gg2ILPNPhArAX6QP7rnFxAFgCHIsLLk1yLOkb+L2ig7TIfcALSVPirR32IRUPjo4OkpHvkX5hPxUdxGoxDHwBeF1wDrNIj5I6Iq+PDpKp84ELokMI+hrwGtKXQFaOC0jXm+3oXuAM4K7gHD0bHvW/HyG1gUXaBPwBLrY0zXXASWSwx64hrgZOwcWWtnmIdKeJH0UHycRngJfhYkubbCV9xvhIdBCzIPcAp+FiyyDeT1ovubDwjE+R7krkc1KudwPvwOvi0RYDJ5NRsQV2LLhAmuT/lYgg25xNWpxb89wFPA/4GH5Drspm0vCo04D7g7NYjCdIt8bz3Ysm9gjwSuBPyKQV1Uo1QmrV/i3g8eAsZnX6NnAMcGt0kAb4JPArwAPRQYKtI3UMvhkXBaryUVLH+kPRQQR8jvSFcnY/d2MLLgBvBC6tOwhpUvrHAo5r9XkaeDtwHPDvwVma5rvAIuAcvIhsuxHg48CRwJdwgXO7p0gfXA4HvhGcxeJ9HVhAaoP33TSsyVaQCowvw0XGMv2E9Hv206QvvNrm28BRwJejg7TAj4B5wGdp57V2M6nA+YdkOndq9AyX0XYm7W0/taYcnwP+D/7Q0zYLSa/7K4A9g7PkaBVpsfA5vF3LJjaX9A3UbwOHxEYJsZTUufkFYGVwFtO0ADiXNER0emwUs9LcBvwl6S5s7nis1qGkzrnXADsFZ6nSFuA7pAHklwdnaavDSNfaq4FZwVmqdhXwCdIXJFl3UE1UcAGYSXqTflWFx98CvIt0VyJrr2HSrYtPAeYDvwDMJn3wHQpLpWOE9O38GtJU7ltI0/KvI/M3IKvdfNJtQI8HDgR2Iw1KH6/bMTdbSO3NjwF3kIqQPyGzfb4Wamfg5aRv0k4Enot/B1k+1pLe935M6nq9KjZOK80CXgy8hDRn4jDyv7Xvw8CVpNsU/zPpzrYWbyfSdfZi0vppLvl/lnsM+Dnps9u/0qDtj50KLtv9X9JciLKraMuA3ydm+5KZmZlZJzOBPYA5NP+bRMvT9kLzo3ghrGgK6cuNXYEZ5FPA3Uwq4K0AVgdnsd5MZcdrLRebSe9hD9DgLY+9FFwgdRx8gNSSPuibxUpSK9ongI0DPpaZmZmZmZmZmZxeCy7bzQP+mLRvbE6Bv7eFtNfvS6SZE74Np5mZmZmZmZk1VtGCy3aTSHsTX0AaNrcvqX1pCqm48iSpDW0ZcA3wU9K+LDMzMzMzMzOzxvv/zwY6ESA7VSUAAAAASUVORK5CYII=" alt="Arrow"><svg class="it-flag" viewBox="0 0 3 2" role="img" aria-label="Italia"><rect width="1" height="2" x="0" fill="#009246"/><rect width="1" height="2" x="1" fill="#fff"/><rect width="1" height="2" x="2" fill="#CE2B37"/></svg><span class="foot-brand-name">Arrow Italia ECS</span></div>
     <h2>Hai bisogno di supporto? Contattaci</h2>
-    <p class="fsub">Il team Cloud di Arrow ECS è a disposizione per approfondimenti su Microsoft Azure, progetti CSP e percorsi di adozione cloud.</p>
+    <p class="fsub">Il team Cloud di Arrow Italia ECS è a disposizione per approfondimenti su Microsoft Azure, progetti CSP e percorsi di adozione cloud.</p>
     <div class="contacts">
       <div class="contact"><div class="role">Microsoft Business Developer</div><div class="name">Marco Di Siero</div><div class="mail-row">✉ <a href="mailto:Marco.DiSiero@arrow.com">Marco.DiSiero@arrow.com</a></div></div>
       <div class="contact"><div class="role">Brand Manager Azure</div><div class="name">Giuseppe Cirillo</div><div class="mail-row">✉ <a href="mailto:Giuseppe.Cirillo@arrow.com">Giuseppe.Cirillo@arrow.com</a></div></div>
       <div class="contact"><div class="role">Technical Sales Engineer</div><div class="name">Gianluca Arria</div><div class="mail-row">✉ <a href="mailto:Gianluca.Arria@arrow.com">Gianluca.Arria@arrow.com</a></div></div>
     </div>
   </div>
-  <div class="foot-note">Le notizie provengono da fonti ufficiali Microsoft (Azure Blog, Azure Updates, Microsoft Learn) e da GitHub (organizzazione Azure). Pagina aggiornata automaticamente al __UPDATED__. Arrow e il logo Arrow sono marchi registrati di Arrow Electronics, Inc. Microsoft, Azure e il logo Microsoft sono marchi del gruppo Microsoft.</div>
+  <div class="foot-note">Le notizie provengono da fonti ufficiali Microsoft (Azure Blog, Azure Updates, Microsoft Learn) e da GitHub (organizzazione Azure). Pagina aggiornata automaticamente al 21 agosto 2026, ore 15:41 (CEST). Arrow e il logo Arrow sono marchi registrati di Arrow Electronics, Inc. Microsoft, Azure e il logo Microsoft sono marchi del gruppo Microsoft.</div>
 </footer>
 <script>
 (function(){
@@ -336,19 +763,4 @@ __GITHUB__
 })();
 </script>
 </body>
-</html>'''
-
-out = (HTML
-    .replace("__ARROW_BLACK__", arrow_black)
-    .replace("__ARROW_WHITE__", arrow_white)
-    .replace("__MS_LOGO__", MS_LOGO)
-    .replace("__UPDATED__", UPDATED)
-    .replace("__RITIRI__", render_highlight(ritiri))
-    .replace("__BLOG__", render_cards(blog))
-    .replace("__UPDATES__", render_cards(updates_grid))
-    .replace("__PARTNER__", render_cards(partner))
-    .replace("__GITHUB__", render_cards(github)))
-
-with open(os.path.join(HERE, "index.html"), "w", encoding="utf-8") as f:
-    f.write(out)
-print("index.html generato -", UPDATED, "-", len(out), "byte")
+</html>
