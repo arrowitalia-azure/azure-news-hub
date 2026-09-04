@@ -273,6 +273,7 @@ footer h2{color:#fff;margin:0 0 6px;font-size:1.4rem}footer .fsub{margin:0 0 24p
 @media (max-width:520px){.hero h1{font-size:1.6rem}.topbar{padding:10px 16px}main{padding:10px 16px 30px}}
 @media (prefers-color-scheme: dark){:root{--bg:#0f151d;--surface:#18202b;--ink:#eaf0f7;--muted:#9fb0c4;--border:#26303d;--shadow:0 2px 12px rgba(0,0,0,.4)}.topbar{background:#131a23}.card p{color:#c4d0de}}
 </style>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6aaad914126a4039b9d9338deaff0d76"}'></script><!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <div class="topbar">
