@@ -1,0 +1,41 @@
+name: Aggiorna Azure News Hub
+
+on:
+  schedule:
+    - cron: "0 5,11,17 * * *"   # 3 volte al giorno (orari UTC: 6/12/18 in Italia d'inverno)
+  workflow_dispatch:              # avvio manuale da GitHub > Actions > Run workflow
+
+permissions:
+  contents: write
+
+concurrency:
+  group: azure-news-hub
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Genera la pagina
+        env:
+          AZURE_TRANSLATOR_KEY: ${{ secrets.AZURE_TRANSLATOR_KEY }}
+          AZURE_TRANSLATOR_REGION: ${{ secrets.AZURE_TRANSLATOR_REGION }}
+        run: python build.py
+
+      - name: Pubblica le modifiche
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
+          git add index.html news.json translations_cache.json
+          if git diff --cached --quiet; then
+            echo "Nessuna novità da pubblicare"
+          else
+            git commit -m "Auto-update Azure news"
+            git push
+          fi
