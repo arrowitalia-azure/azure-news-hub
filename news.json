@@ -1,6 +1,42 @@
 {
- "updated": "2026-11-07T12:36+01:00",
+ "updated": "2026-11-07T21:44+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Integration Services Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/logic-apps-standard-custom-code-now-supports-net-10/ba-p/4570808",
+   "date": "2026-11-07",
+   "author": "WSilveira",
+   "team": null,
+   "en": "Logic Apps Standard custom code now supports .NET 10",
+   "it": "Logic Apps Standard custom code now supports .NET 10",
+   "sumEn": "The latest Azure Logic Apps (Standard) extension for Visual Studio Code (VS Code) now supports .NET 10 custom code. You can create new .NET 10 local-function projects and migrate your existing .NET 8 projects without turning them into separate Azure Functions apps.",
+   "sum": "The latest Azure Logic Apps (Standard) extension for Visual Studio Code (VS Code) now supports .NET 10 custom code. You can create new .NET 10 local-function projects and migrate your existing .NET 8 projects without turning them into separate Azure Functions apps.",
+   "cat": "Apps",
+   "service": "Logic Apps",
+   "status": null,
+   "translated": false,
+   "read": 5,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Infrastructure Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-infrastructure-blog/azure-local-10-mistakes-that-can-derail-your-deployment-before/ba-p/4569922",
+   "date": "2026-11-06",
+   "author": "Azure-Hacker",
+   "team": null,
+   "en": "Azure Local: 10 mistakes that can derail your deployment before it starts",
+   "it": "Azure Local: 10 mistakes that can derail your deployment before it starts",
+   "sumEn": "Over the past few years, starting back when it was still called Azure Stack HCI, I've spent most of my time on Azure Local: scoping calls, design reviews, workshops, assessments and more escalations than I'd like to count.",
+   "sum": "Over the past few years, starting back when it was still called Azure Stack HCI, I've spent most of my time on Azure Local: scoping calls, design reviews, workshops, assessments and more escalations than I'd like to count.",
+   "cat": "Infrastructure",
+   "service": "Azure Local",
+   "status": null,
+   "translated": false,
+   "read": 36,
+   "readEst": true
+  },
   {
    "src": "Microsoft Community Hub",
    "blog": "Apps on Azure Blog",
@@ -17,24 +53,6 @@
    "status": null,
    "translated": false,
    "read": 18,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Integration Services Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/logic-apps-standard-custom-code-now-supports-net-10/ba-p/4570808",
-   "date": "2026-11-06",
-   "author": "WSilveira",
-   "team": null,
-   "en": "Logic Apps Standard custom code now supports .NET 10",
-   "it": "Logic Apps Standard custom code now supports .NET 10",
-   "sumEn": "The latest Azure Logic Apps (Standard) extension for Visual Studio Code (VS Code) now supports .NET 10 custom code. You can create new .NET 10 local-function projects and migrate your existing .NET 8 projects without turning them into separate Azure Functions apps.",
-   "sum": "The latest Azure Logic Apps (Standard) extension for Visual Studio Code (VS Code) now supports .NET 10 custom code. You can create new .NET 10 local-function projects and migrate your existing .NET 8 projects without turning them into separate Azure Functions apps.",
-   "cat": "Apps",
-   "service": "Logic Apps",
-   "status": null,
-   "translated": false,
-   "read": 5,
    "readEst": true
   },
   {
@@ -89,6 +107,24 @@
    "status": null,
    "translated": false,
    "read": 6,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Confidential Computing Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-confidential-computing/announcing-live-migration-for-confidential-computing/ba-p/4524558",
+   "date": "2026-11-06",
+   "author": "mmcrey",
+   "team": null,
+   "en": "Announcing Live Migration for Confidential Computing",
+   "it": "Announcing Live Migration for Confidential Computing",
+   "sumEn": "Authored by Caroline Perez-Vargas, Michael McReynolds Introduction Today at Build , Microsoft showcased Live Migration for Azure confidential computing, a new capability that helps move Intel® TDX Confidential VMs to updated infrastructure with limited interruption while helping protect VM memory and execution context…",
+   "sum": "Authored by Caroline Perez-Vargas, Michael McReynolds Introduction Today at Build , Microsoft showcased Live Migration for Azure confidential computing, a new capability that helps move Intel® TDX Confidential VMs to updated infrastructure with limited interruption while helping protect VM memory and execution context…",
+   "cat": "Security",
+   "service": "Azure confidential computing",
+   "status": null,
+   "translated": false,
+   "read": 4,
    "readEst": true
   },
   {
@@ -348,24 +384,6 @@
    "service": "Microsoft Azure",
    "status": "Preview",
    "translated": false
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Infrastructure Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-infrastructure-blog/azure-local-10-mistakes-that-can-derail-your-deployment-before/ba-p/4569922",
-   "date": "2026-11-03",
-   "author": "Azure-Hacker",
-   "team": null,
-   "en": "Azure Local: 10 mistakes that can derail your deployment before it starts",
-   "it": "Azure Local: 10 mistakes that can derail your deployment before it starts",
-   "sumEn": "Over the past few years, starting back when it was still called Azure Stack HCI, I've spent most of my time on Azure Local: scoping calls, design reviews, workshops, assessments and more escalations than I'd like to count.",
-   "sum": "Over the past few years, starting back when it was still called Azure Stack HCI, I've spent most of my time on Azure Local: scoping calls, design reviews, workshops, assessments and more escalations than I'd like to count.",
-   "cat": "Infrastructure",
-   "service": "Azure Local",
-   "status": null,
-   "translated": false,
-   "read": 33,
-   "readEst": true
   },
   {
    "src": "Microsoft Community Hub",
@@ -1834,24 +1852,6 @@
    "status": null,
    "translated": false,
    "read": 6,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Confidential Computing Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-confidential-computing/announcing-live-migration-for-confidential-computing/ba-p/4524558",
-   "date": "2026-10-19",
-   "author": "mmcrey",
-   "team": null,
-   "en": "Announcing Live Migration for Confidential Computing",
-   "it": "Announcing Live Migration for Confidential Computing",
-   "sumEn": "Authored by Caroline Perez-Vargas, Michael McReynolds Introduction Today at Build , Microsoft showcased Live Migration for Confidential Computing, a new capability that helps move Intel® TDX Confidential VMs to updated infrastructure with limited interruption while helping protect VM memory and execution context…",
-   "sum": "Authored by Caroline Perez-Vargas, Michael McReynolds Introduction Today at Build , Microsoft showcased Live Migration for Confidential Computing, a new capability that helps move Intel® TDX Confidential VMs to updated infrastructure with limited interruption while helping protect VM memory and execution context…",
-   "cat": "Security",
-   "service": "Confidential VMs",
-   "status": null,
-   "translated": false,
-   "read": 4,
    "readEst": true
   },
   {
