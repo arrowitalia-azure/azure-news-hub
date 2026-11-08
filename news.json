@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-08T12:48+01:00",
+ "updated": "2026-11-08T22:00+01:00",
  "items": [
   {
    "src": "Microsoft Community Hub",
@@ -1999,24 +1999,6 @@
    "readEst": true
   },
   {
-   "src": "Microsoft Azure Blog",
-   "blog": "Microsoft Azure Blog",
-   "url": "https://www.microsoft.com/en-us/security/blog/2026/10/16/managing-open-weight-model-risk-in-enterprise-deployments/",
-   "date": "2026-10-16",
-   "author": "Michael Scovetta",
-   "team": null,
-   "en": "Managing open-weight model risk in enterprise deployments",
-   "it": "Managing open-weight model risk in enterprise deployments",
-   "sumEn": "The growing AI landscape is giving enterprises more choice in how they build, customize, and deploy increasingly capable models. Open-weight models are an important part of that landscape.",
-   "sum": "The growing AI landscape is giving enterprises more choice in how they build, customize, and deploy increasingly capable models. Open-weight models are an important part of that landscape.",
-   "cat": "AI",
-   "service": "Microsoft Foundry",
-   "status": null,
-   "translated": false,
-   "read": 5,
-   "readEst": true
-  },
-  {
    "src": "Microsoft Community Hub",
    "blog": "Apps on Azure Blog",
    "url": "https://techcommunity.microsoft.com/t5/apps-on-azure-blog/enterprise-adoption-guide-for-azure-sre-agent-part-2-from-one/ba-p/4564311",
@@ -2660,6 +2642,24 @@
    "status": null,
    "translated": false,
    "read": 3,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Confidential Computing Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-confidential-computing/announcing-general-availability-of-azure-intel-tdx-confidential/ba-p/4495693",
+   "date": "2026-09-30",
+   "author": "simranparkhe",
+   "team": null,
+   "en": "Announcing general availability of Azure Intel® TDX confidential VMs",
+   "it": "Announcing general availability of Azure Intel® TDX confidential VMs",
+   "sumEn": "We’re excited to announce the general availability of Azure’s next generation of confidential virtual machines, powered by 5th Gen Intel® Xeon® processors with Intel® Trust Domain Extensions (Intel® TDX).",
+   "sum": "We’re excited to announce the general availability of Azure’s next generation of confidential virtual machines, powered by 5th Gen Intel® Xeon® processors with Intel® Trust Domain Extensions (Intel® TDX).",
+   "cat": "Security",
+   "service": "Confidential VMs",
+   "status": "GA",
+   "translated": false,
+   "read": 5,
    "readEst": true
   }
  ]
