@@ -1,6 +1,56 @@
 {
- "updated": "2026-11-09T14:42+01:00",
+ "updated": "2026-11-10T01:37+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Arc Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-arc-blog/azure-arc-at-microsoft-ignite-2026-sessions-hands-on-labs-and/ba-p/4571203",
+   "date": "2026-11-09",
+   "author": "Mason_Torres",
+   "team": null,
+   "en": "Azure Arc at Microsoft Ignite 2026: Sessions, hands-on labs, and ways to connect",
+   "it": "Azure Arc at Microsoft Ignite 2026: Sessions, hands-on labs, and ways to connect",
+   "sumEn": "Microsoft Ignite 2026 is almost here! Join us November 17–20 in San Francisco or online to explore the latest innovations across Microsoft. As organizations operate across increasingly distributed environments, consistent visibility, governance, and management are more important than ever.",
+   "sum": "Microsoft Ignite 2026 is almost here! Join us November 17–20 in San Francisco or online to explore the latest innovations across Microsoft. As organizations operate across increasingly distributed environments, consistent visibility, governance, and management are more important than ever.",
+   "cat": "Infrastructure",
+   "service": "Azure Arc",
+   "status": null,
+   "translated": false,
+   "read": 2,
+   "readEst": true
+  },
+  {
+   "src": "Azure Updates",
+   "blog": "Azure service updates",
+   "url": "https://azure.microsoft.com/updates?id=575106",
+   "date": "2026-11-09",
+   "author": null,
+   "team": "Azure Updates",
+   "en": "Support for .NET 8 and .NET 9 on Static Web Apps is ending November 10, 2026",
+   "it": "Support for .NET 8 and .NET 9 on Static Web Apps is ending November 10, 2026",
+   "sumEn": "Support for .NET 8 and .NET 9 will end on November 10, 2026. Please transition your managed Functions APIs to .NET 10 by that date. Your apps will continue to operate, but security updates will no longer be provided and support for .NET 8 and .NET 9 on Az",
+   "sum": "Support for .NET 8 and .NET 9 will end on November 10, 2026. Please transition your managed Functions APIs to .NET 10 by that date. Your apps will continue to operate, but security updates will no longer be provided and support for .NET 8 and .NET 9 on Az",
+   "cat": "Apps",
+   "service": "Microsoft Azure",
+   "status": "Ritiro",
+   "translated": false
+  },
+  {
+   "src": "Azure Updates",
+   "blog": "Azure service updates",
+   "url": "https://azure.microsoft.com/updates?id=579854",
+   "date": "2026-11-09",
+   "author": null,
+   "team": "Azure Updates",
+   "en": "Modernize Arc-enabled Windows Servers with Azure File Sync",
+   "it": "Modernize Arc-enabled Windows Servers with Azure File Sync",
+   "sumEn": "Azure File Sync provides hybrid access or seamless migration of data from Windows Server to Azure Files while preserving the familiar local file server experience for users and applications. Now in preview, users have a guided Azure portal experience to s",
+   "sum": "Azure File Sync provides hybrid access or seamless migration of data from Windows Server to Azure Files while preserving the familiar local file server experience for users and applications. Now in preview, users have a guided Azure portal experience to s",
+   "cat": "Data",
+   "service": "Azure File Sync",
+   "status": "Preview",
+   "translated": false
+  },
   {
    "src": "Microsoft Community Hub",
    "blog": "Azure Integration Services Blog",
@@ -304,22 +354,6 @@
    "translated": false,
    "read": 9,
    "readEst": true
-  },
-  {
-   "src": "Azure Updates",
-   "blog": "Azure service updates",
-   "url": "https://azure.microsoft.com/updates?id=579280",
-   "date": "2026-11-05",
-   "author": null,
-   "team": "Azure Updates",
-   "en": "WAF Insights for Azure Application Gateway",
-   "it": "WAF Insights for Azure Application Gateway",
-   "sumEn": "WAF Insights for Azure Application Gateway Web Application Firewall (WAF) is now generally available. WAF Insights is a built-in experience in the WAF policy that brings WAF logs and metrics together in interactive dashboards, so you can investigate block",
-   "sum": "WAF Insights for Azure Application Gateway Web Application Firewall (WAF) is now generally available. WAF Insights is a built-in experience in the WAF policy that brings WAF logs and metrics together in interactive dashboards, so you can investigate block",
-   "cat": "Networking",
-   "service": "Azure Application Gateway",
-   "status": "GA",
-   "translated": false
   },
   {
    "src": "Microsoft Community Hub",
@@ -781,22 +815,6 @@
    "cat": "Data",
    "service": "Azure Migrate",
    "status": "Preview",
-   "translated": false
-  },
-  {
-   "src": "Azure Updates",
-   "blog": "Azure service updates",
-   "url": "https://azure.microsoft.com/updates?id=576255",
-   "date": "2026-11-02",
-   "author": null,
-   "team": "Azure Updates",
-   "en": "OT security in Microsoft Defender for IoT",
-   "it": "OT security in Microsoft Defender for IoT",
-   "sumEn": "This is the formal notice that Microsoft plans to deprecate the operational technology (OT) security component of Microsoft Defender for IoT. The service will be fully deprecated in October 2029, following a three-year transition period.This change applie",
-   "sum": "This is the formal notice that Microsoft plans to deprecate the operational technology (OT) security component of Microsoft Defender for IoT. The service will be fully deprecated in October 2029, following a three-year transition period.This change applie",
-   "cat": "Security",
-   "service": "Microsoft Azure",
-   "status": "Ritiro",
    "translated": false
   },
   {
@@ -2642,24 +2660,6 @@
    "status": null,
    "translated": false,
    "read": 3,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Confidential Computing Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-confidential-computing/announcing-general-availability-of-azure-intel-tdx-confidential/ba-p/4495693",
-   "date": "2026-09-30",
-   "author": "simranparkhe",
-   "team": null,
-   "en": "Announcing general availability of Azure Intel® TDX confidential VMs",
-   "it": "Announcing general availability of Azure Intel® TDX confidential VMs",
-   "sumEn": "We’re excited to announce the general availability of Azure’s next generation of confidential virtual machines, powered by 5th Gen Intel® Xeon® processors with Intel® Trust Domain Extensions (Intel® TDX).",
-   "sum": "We’re excited to announce the general availability of Azure’s next generation of confidential virtual machines, powered by 5th Gen Intel® Xeon® processors with Intel® Trust Domain Extensions (Intel® TDX).",
-   "cat": "Security",
-   "service": "Confidential VMs",
-   "status": "GA",
-   "translated": false,
-   "read": 5,
    "readEst": true
   }
  ]
