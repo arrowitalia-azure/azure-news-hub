@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-12T14:38+01:00",
+ "updated": "2026-11-12T23:39+01:00",
  "items": [
   {
    "src": "Microsoft Community Hub",
@@ -17,6 +17,24 @@
    "status": "Preview",
    "translated": false,
    "read": 5,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Apps on Azure Blog",
+   "url": "https://techcommunity.microsoft.com/t5/apps-on-azure-blog/introducing-azure-container-apps-as-a-target-workload-in-azure/ba-p/4571669",
+   "date": "2026-11-12",
+   "author": "DeepGanguly",
+   "team": null,
+   "en": "Introducing Azure Container Apps as a target workload in Azure Migrate",
+   "it": "Introducing Azure Container Apps as a target workload in Azure Migrate",
+   "sumEn": "We are excited to announce Azure Container Apps as a target workload for assessment in Azure Migrate , helping organizations evaluate existing web applications for migration to a managed, serverless container platform.",
+   "sum": "We are excited to announce Azure Container Apps as a target workload for assessment in Azure Migrate , helping organizations evaluate existing web applications for migration to a managed, serverless container platform.",
+   "cat": "Apps",
+   "service": "Azure Container Apps",
+   "status": null,
+   "translated": false,
+   "read": 4,
    "readEst": true
   },
   {
@@ -74,6 +92,38 @@
    "readEst": true
   },
   {
+   "src": "Azure Updates",
+   "blog": "Azure service updates",
+   "url": "https://azure.microsoft.com/updates?id=578207",
+   "date": "2026-11-12",
+   "author": null,
+   "team": "Azure Updates",
+   "en": "Auto scaling of ingestion limits in Azure Monitor workspace",
+   "it": "Auto scaling of ingestion limits in Azure Monitor workspace",
+   "sumEn": "Auto scaling introduces a per-workspace capability in Azure Monitor Workspace (AMW) to automatically scale ingestion limits based on observed usage patterns. When enabled, the system dynamically adjusts ingestion limits (quota ceiling) to maintain healthy",
+   "sum": "Auto scaling introduces a per-workspace capability in Azure Monitor Workspace (AMW) to automatically scale ingestion limits based on observed usage patterns. When enabled, the system dynamically adjusts ingestion limits (quota ceiling) to maintain healthy",
+   "cat": "Infrastructure",
+   "service": "Azure Kubernetes Service",
+   "status": "Preview",
+   "translated": false
+  },
+  {
+   "src": "Azure Updates",
+   "blog": "Azure service updates",
+   "url": "https://azure.microsoft.com/updates?id=574158",
+   "date": "2026-11-12",
+   "author": null,
+   "team": "Azure Updates",
+   "en": "SQL performance monitoring for Azure SQL Managed Instance",
+   "it": "SQL performance monitoring for Azure SQL Managed Instance",
+   "sumEn": "The public preview of Microsoft-managed performance monitoring for Azure SQL Managed Instance is now available. Customers monitoring business-critical SQL Managed Instance workloads often rely on custom scripts and disconnected monitoring tools.",
+   "sum": "The public preview of Microsoft-managed performance monitoring for Azure SQL Managed Instance is now available. Customers monitoring business-critical SQL Managed Instance workloads often rely on custom scripts and disconnected monitoring tools.",
+   "cat": "Data",
+   "service": "Azure SQL Managed Instance",
+   "status": "Preview",
+   "translated": false
+  },
+  {
    "src": "Microsoft Community Hub",
    "blog": "Azure Storage Blog",
    "url": "https://techcommunity.microsoft.com/t5/azure-storage-blog/azure-netapp-files-the-data-backbone-for-nvidia-ai-model/ba-p/4571839",
@@ -90,6 +140,22 @@
    "translated": false,
    "read": 12,
    "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Apps on Azure Blog",
+   "url": "https://techcommunity.microsoft.com/t5/apps-on-azure-blog/python-support-has-arrived-in-the-guided-copilot-experience-for/ba-p/4572591",
+   "date": "2026-11-11",
+   "author": "fiveisprime",
+   "team": null,
+   "en": "Python support has arrived in the guided Copilot experience for VS Code",
+   "it": "Python support has arrived in the guided Copilot experience for VS Code",
+   "sumEn": "When we introduced the guided Copilot experience for building Azure apps in VS Code , we started with JavaScript and TypeScript, with Python on the roadmap. Since then, we've seen people creating Python projects with the experience, and we wanted to make sure our Python lovers had proper support.",
+   "sum": "When we introduced the guided Copilot experience for building Azure apps in VS Code , we started with JavaScript and TypeScript, with Python on the roadmap. Since then, we've seen people creating Python projects with the experience, and we wanted to make sure our Python lovers had proper support.",
+   "cat": "AI",
+   "service": "Microsoft Azure",
+   "status": null,
+   "translated": false
   },
   {
    "src": "Microsoft Community Hub",
@@ -1022,22 +1088,6 @@
    "translated": false
   },
   {
-   "src": "Azure Updates",
-   "blog": "Azure service updates",
-   "url": "https://azure.microsoft.com/updates?id=579162",
-   "date": "2026-11-04",
-   "author": null,
-   "team": "Azure Updates",
-   "en": "Multi-disk crash-consistent VM restore points for Premium SSD v2 and Ultra Disks on VMs with SCSI disk controller",
-   "it": "Multi-disk crash-consistent VM restore points for Premium SSD v2 and Ultra Disks on VMs with SCSI disk controller",
-   "sumEn": "Multi-disk crash-consistent restore points for Azure virtual machines with Premium SSD v2 and Ultra data disks are now available in public preview on VMs with SCSI disk controllers. You can use this to capture the agent-less crash consistent restore point",
-   "sum": "Multi-disk crash-consistent restore points for Azure virtual machines with Premium SSD v2 and Ultra data disks are now available in public preview on VMs with SCSI disk controllers. You can use this to capture the agent-less crash consistent restore point",
-   "cat": "Infrastructure",
-   "service": "Microsoft Azure",
-   "status": "Preview",
-   "translated": false
-  },
-  {
    "src": "Microsoft Community Hub",
    "blog": "Azure Storage Blog",
    "url": "https://techcommunity.microsoft.com/t5/azure-storage-blog/enhanced-data-protection-for-azure-files/ba-p/4563333",
@@ -1180,22 +1230,6 @@
    "translated": false,
    "read": 3,
    "readEst": true
-  },
-  {
-   "src": "Azure Updates",
-   "blog": "Azure service updates",
-   "url": "https://azure.microsoft.com/updates?id=576382",
-   "date": "2026-11-03",
-   "author": null,
-   "team": "Azure Updates",
-   "en": "JWT validation for Application Gateway for Containers",
-   "it": "JWT validation for Application Gateway for Containers",
-   "sumEn": "Application Gateway for Containers now supports centralized JSON Web Token validation through the AuthPolicy custom resource. Teams can validate a token signature, issuer, lifetime, and configured audience by using signing keys retrieved from a trusted HT",
-   "sum": "Application Gateway for Containers now supports centralized JSON Web Token validation through the AuthPolicy custom resource. Teams can validate a token signature, issuer, lifetime, and configured audience by using signing keys retrieved from a trusted HT",
-   "cat": "Networking",
-   "service": "Microsoft Azure",
-   "status": "Preview",
-   "translated": false
   },
   {
    "src": "Microsoft Community Hub",
@@ -1838,24 +1872,6 @@
   },
   {
    "src": "Microsoft Community Hub",
-   "blog": "Apps on Azure Blog",
-   "url": "https://techcommunity.microsoft.com/t5/apps-on-azure-blog/gpu-memory-profiling-on-aks-find-the-code-behind-memory-pressure/ba-p/4566375",
-   "date": "2026-10-21",
-   "author": "johnsonshi_msft",
-   "team": null,
-   "en": "GPU Memory Profiling on AKS: Find the Code Behind Memory Pressure",
-   "it": "GPU Memory Profiling on AKS: Find the Code Behind Memory Pressure",
-   "sumEn": "By Brian Benz , Paul Yu , Maya Singh , Johnson Shi GPU memory allocation can be tricky to get right. Allocate too little and your AI workload can slow down or fail with an out-of-memory error, often during peak traffic when reliability matters most.",
-   "sum": "By Brian Benz , Paul Yu , Maya Singh , Johnson Shi GPU memory allocation can be tricky to get right. Allocate too little and your AI workload can slow down or fail with an out-of-memory error, often during peak traffic when reliability matters most.",
-   "cat": "Apps",
-   "service": "Azure Kubernetes Service",
-   "status": null,
-   "translated": false,
-   "read": 8,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
    "blog": "Azure Integration Services Blog",
    "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/orchestrate-foundry-prompt-and-hosted-agents-with-logic-apps/ba-p/4566381",
    "date": "2026-10-21",
@@ -1942,24 +1958,6 @@
    "status": null,
    "translated": false,
    "read": 13,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Apps on Azure Blog",
-   "url": "https://techcommunity.microsoft.com/t5/apps-on-azure-blog/data-transfer-and-transactions-metrics-now-generally-available/ba-p/4565530",
-   "date": "2026-10-20",
-   "author": "jeburke",
-   "team": null,
-   "en": "Data Transfer and Transactions metrics now generally available for Azure Container Registry",
-   "it": "Data Transfer and Transactions metrics now generally available for Azure Container Registry",
-   "sumEn": "Azure Container Registry now provides two new platform metrics that make it easier to understand outbound data transfer, inspect API traffic, and investigate throttled or failed requests without first opening a support request.",
-   "sum": "Azure Container Registry now provides two new platform metrics that make it easier to understand outbound data transfer, inspect API traffic, and investigate throttled or failed requests without first opening a support request.",
-   "cat": "Data",
-   "service": "Azure Container Registry",
-   "status": "GA",
-   "translated": false,
-   "read": 6,
    "readEst": true
   },
   {
