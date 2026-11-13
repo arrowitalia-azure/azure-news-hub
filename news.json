@@ -1,5 +1,5 @@
 {
- "updated": "2026-11-13T13:56+01:00",
+ "updated": "2026-11-13T23:26+01:00",
  "items": [
   {
    "src": "Microsoft Community Hub",
@@ -18,6 +18,22 @@
    "translated": false,
    "read": 4,
    "readEst": true
+  },
+  {
+   "src": "Azure Updates",
+   "blog": "Azure service updates",
+   "url": "https://azure.microsoft.com/updates?id=578818",
+   "date": "2026-11-13",
+   "author": null,
+   "team": "Azure Updates",
+   "en": "Azure Data Share will be retired on November 12, 2029",
+   "it": "Azure Data Share will be retired on November 12, 2029",
+   "sumEn": "Azure Data Share will retire on November 12, 2029. Before that date, transition your data sharing workloads to Microsoft Fabric, which offers External data sharing, Cross tenant delegated shortcuts and IQ share or an appropriate data-source-specific shari",
+   "sum": "Azure Data Share will retire on November 12, 2029. Before that date, transition your data sharing workloads to Microsoft Fabric, which offers External data sharing, Cross tenant delegated shortcuts and IQ share or an appropriate data-source-specific shari",
+   "cat": "Data",
+   "service": "Microsoft Fabric",
+   "status": "Ritiro",
+   "translated": false
   },
   {
    "src": "Microsoft Community Hub",
@@ -1192,22 +1208,6 @@
    "sum": "The Azure Database for PostgreSQL Flexible Server REST API version 2026-10-01 is now generally available. This stable API release introduces expanded capabilities for maintenance management, immutable backups, multi-tenant encryption (cross-tenant custome",
    "cat": "Data",
    "service": "Azure Database for PostgreSQL",
-   "status": "GA",
-   "translated": false
-  },
-  {
-   "src": "Azure Updates",
-   "blog": "Azure service updates",
-   "url": "https://azure.microsoft.com/updates?id=578966",
-   "date": "2026-11-04",
-   "author": null,
-   "team": "Azure Updates",
-   "en": "Route maps for Azure Route Server",
-   "it": "Route maps for Azure Route Server",
-   "sumEn": "Route maps for Azure Route Server are now generally available in the Azure public cloud. Route maps provide fine-grained control over inbound and outbound routing across hybrid connections. Customers can manage routes advertised to and from Azure Route Se",
-   "sum": "Route maps for Azure Route Server are now generally available in the Azure public cloud. Route maps provide fine-grained control over inbound and outbound routing across hybrid connections. Customers can manage routes advertised to and from Azure Route Se",
-   "cat": "Infrastructure",
-   "service": "Microsoft Azure",
    "status": "GA",
    "translated": false
   },
