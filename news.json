@@ -1,6 +1,24 @@
 {
- "updated": "2026-11-14T22:14+01:00",
+ "updated": "2026-11-15T13:35+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "FinOps Blog",
+   "url": "https://techcommunity.microsoft.com/t5/finops-blog/your-guide-to-finops-for-ai-at-microsoft-ignite-2026/ba-p/4569117",
+   "date": "2026-11-14",
+   "author": "Fernando_Vasconcellos",
+   "team": null,
+   "en": "Your guide to FinOps for AI at Microsoft Ignite 2026",
+   "it": "Your guide to FinOps for AI at Microsoft Ignite 2026",
+   "sumEn": "AI has moved from pilots to production, and the questions have changed with it. It is no longer enough to know what AI costs. Leaders want to know whether spend is predictable, who is driving it, and which investments are delivering real business value.",
+   "sum": "AI has moved from pilots to production, and the questions have changed with it. It is no longer enough to know what AI costs. Leaders want to know whether spend is predictable, who is driving it, and which investments are delivering real business value.",
+   "cat": "AI",
+   "service": "Microsoft Foundry",
+   "status": null,
+   "translated": false,
+   "read": 9,
+   "readEst": true
+  },
   {
    "src": "Microsoft Community Hub",
    "blog": "Azure Infrastructure Blog",
@@ -1265,24 +1283,6 @@
    "status": null,
    "translated": false,
    "read": 8,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "FinOps Blog",
-   "url": "https://techcommunity.microsoft.com/t5/finops-blog/your-guide-to-finops-for-ai-at-microsoft-ignite-2026/ba-p/4569117",
-   "date": "2026-11-04",
-   "author": "Fernando_Vasconcellos",
-   "team": null,
-   "en": "Your guide to FinOps for AI at Microsoft Ignite 2026",
-   "it": "Your guide to FinOps for AI at Microsoft Ignite 2026",
-   "sumEn": "AI has moved from pilots to production, and the questions have changed with it. It is no longer enough to know what AI costs. Leaders want to know whether spend is predictable, who is driving it, and which investments are delivering real business value.",
-   "sum": "AI has moved from pilots to production, and the questions have changed with it. It is no longer enough to know what AI costs. Leaders want to know whether spend is predictable, who is driving it, and which investments are delivering real business value.",
-   "cat": "AI",
-   "service": "Microsoft Foundry",
-   "status": null,
-   "translated": false,
-   "read": 9,
    "readEst": true
   },
   {
