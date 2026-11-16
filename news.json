@@ -1,6 +1,24 @@
 {
- "updated": "2026-11-15T22:35+01:00",
+ "updated": "2026-11-16T14:27+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Infrastructure Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-infrastructure-blog/deploying-an-ai-application-on-azure-container-apps/ba-p/4572612",
+   "date": "2026-11-15",
+   "author": "Devi_Priya",
+   "team": null,
+   "en": "Deploying an AI Application on Azure Container Apps",
+   "it": "Deploying an AI Application on Azure Container Apps",
+   "sumEn": "AI applications often start as prototypes running locally on a developer’s machine. A Streamlit application may work perfectly in a development environment, but making it accessible to users introduces a different set of infrastructure and operational considerations.",
+   "sum": "AI applications often start as prototypes running locally on a developer’s machine. A Streamlit application may work perfectly in a development environment, but making it accessible to users introduces a different set of infrastructure and operational considerations.",
+   "cat": "AI",
+   "service": "Azure Container Apps",
+   "status": null,
+   "translated": false,
+   "read": 13,
+   "readEst": true
+  },
   {
    "src": "Microsoft Community Hub",
    "blog": "FinOps Blog",
@@ -440,24 +458,6 @@
    "service": "Azure SQL Managed Instance",
    "status": "Preview",
    "translated": false
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Infrastructure Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-infrastructure-blog/deploying-an-ai-application-on-azure-container-apps/ba-p/4572612",
-   "date": "2026-11-11",
-   "author": "Devi_Priya",
-   "team": null,
-   "en": "Deploying an AI Application on Azure Container Apps",
-   "it": "Deploying an AI Application on Azure Container Apps",
-   "sumEn": "AI applications often start as prototypes running locally on a developer’s machine. A Streamlit application may work perfectly in a development environment, but making it accessible to users introduces a different set of infrastructure and operational considerations.",
-   "sum": "AI applications often start as prototypes running locally on a developer’s machine. A Streamlit application may work perfectly in a development environment, but making it accessible to users introduces a different set of infrastructure and operational considerations.",
-   "cat": "AI",
-   "service": "Azure Container Apps",
-   "status": null,
-   "translated": false,
-   "read": 14,
-   "readEst": true
   },
   {
    "src": "Microsoft Community Hub",
