@@ -1,6 +1,24 @@
 {
- "updated": "2026-11-22T14:10+01:00",
+ "updated": "2026-11-22T23:22+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Compute Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-compute-blog/ignite-2026-the-next-era-of-enterprise-ai-starts-with-the/ba-p/4574943",
+   "date": "2026-11-22",
+   "author": "Arun Kishan",
+   "team": null,
+   "en": "Ignite 2026: The next era of enterprise AI starts with the infrastructure beneath it",
+   "it": "Ignite 2026: The next era of enterprise AI starts with the infrastructure beneath it",
+   "sumEn": "By Arun Kishan, Technical Fellow and Corporate Vice President, Azure Compute Every major technology shift eventually asks whether infrastructure can turn possibility into dependable progress, and for enterprise AI, that moment is here.",
+   "sum": "By Arun Kishan, Technical Fellow and Corporate Vice President, Azure Compute Every major technology shift eventually asks whether infrastructure can turn possibility into dependable progress, and for enterprise AI, that moment is here.",
+   "cat": "AI",
+   "service": "Azure Maia",
+   "status": null,
+   "translated": false,
+   "read": 9,
+   "readEst": true
+  },
   {
    "src": "Microsoft Community Hub",
    "blog": "Azure Infrastructure Blog",
@@ -263,24 +281,6 @@
    "status": "Preview",
    "translated": false,
    "read": 6,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Compute Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-compute-blog/ignite-2026-the-next-era-of-enterprise-ai-starts-with-the/ba-p/4574943",
-   "date": "2026-11-20",
-   "author": "Arun Kishan",
-   "team": null,
-   "en": "Ignite 2026: The next era of enterprise AI starts with the infrastructure beneath it",
-   "it": "Ignite 2026: The next era of enterprise AI starts with the infrastructure beneath it",
-   "sumEn": "By Arun Kishan, Technical Fellow and Corporate Vice President, Azure Compute Every major technology shift eventually asks whether infrastructure can turn possibility into dependable progress, and for enterprise AI, that moment is here.",
-   "sum": "By Arun Kishan, Technical Fellow and Corporate Vice President, Azure Compute Every major technology shift eventually asks whether infrastructure can turn possibility into dependable progress, and for enterprise AI, that moment is here.",
-   "cat": "AI",
-   "service": "Azure Maia",
-   "status": null,
-   "translated": false,
-   "read": 8,
    "readEst": true
   },
   {
