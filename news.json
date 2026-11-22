@@ -1,6 +1,42 @@
 {
- "updated": "2026-11-21T23:05+01:00",
+ "updated": "2026-11-22T14:10+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Infrastructure Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-infrastructure-blog/implement-virtual-wan-secure-hub-with-customer-owned-public-ips/ba-p/4575390",
+   "date": "2026-11-21",
+   "author": "Seema_gupta",
+   "team": null,
+   "en": "Implement Virtual WAN Secure Hub with Customer-Owned Public IPs for Firewall using AVM",
+   "it": "Implement Virtual WAN Secure Hub with Customer-Owned Public IPs for Firewall using AVM",
+   "sumEn": "Azure Virtual WAN provides a managed networking architecture that simplifies connectivity between virtual networks, branch locations, VPN connections, and ExpressRoute connections. At the centre of this architecture is the Virtual Hub , which provides managed connectivity and routing.",
+   "sum": "Azure Virtual WAN provides a managed networking architecture that simplifies connectivity between virtual networks, branch locations, VPN connections, and ExpressRoute connections. At the centre of this architecture is the Virtual Hub , which provides managed connectivity and routing.",
+   "cat": "Security",
+   "service": "Azure Virtual WAN",
+   "status": null,
+   "translated": false,
+   "read": 6,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Integration Services Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/rotating-credentials-in-azure-api-management/ba-p/4575478",
+   "date": "2026-11-21",
+   "author": "vladvino",
+   "team": null,
+   "en": "Rotating credentials in Azure API Management",
+   "it": "Rotating credentials in Azure API Management",
+   "sumEn": "Credentials covered by this guidance Subscription keys Named values that contain secrets Backend credentials (headers, query parameters, client certificates) OAuth 2.0 and OpenID Connect client secrets Connection strings (for example, Event Hubs loggers) Credentials written directly into policies How to rotate safely…",
+   "sum": "Credentials covered by this guidance Subscription keys Named values that contain secrets Backend credentials (headers, query parameters, client certificates) OAuth 2.0 and OpenID Connect client secrets Connection strings (for example, Event Hubs loggers) Credentials written directly into policies How to rotate safely…",
+   "cat": "Apps",
+   "service": "Azure API Management",
+   "status": null,
+   "translated": false,
+   "read": 4,
+   "readEst": true
+  },
   {
    "src": "Azure Updates",
    "blog": "Azure service updates",
@@ -65,6 +101,24 @@
    "status": null,
    "translated": false,
    "read": 28,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Storage Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-storage-blog/azure-elastic-san-next-generation-public-preview-mission/ba-p/4573949",
+   "date": "2026-11-20",
+   "author": "Kiran_Cherukuwada",
+   "team": null,
+   "en": "Azure Elastic SAN Next Generation public preview: Mission-critical performance & cloud-native scale",
+   "it": "Azure Elastic SAN Next Generation public preview: Mission-critical performance & cloud-native scale",
+   "sumEn": "Mission-critical applications such as SAP HANA, Epic, and core transactional databases demand consistently high performance and predictable low latency.",
+   "sum": "Mission-critical applications such as SAP HANA, Epic, and core transactional databases demand consistently high performance and predictable low latency.",
+   "cat": "Data",
+   "service": "Azure Elastic SAN",
+   "status": "Preview",
+   "translated": false,
+   "read": 9,
    "readEst": true
   },
   {
@@ -699,24 +753,6 @@
    "status": "GA",
    "translated": false,
    "read": 4,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Storage Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-storage-blog/azure-elastic-san-next-generation-public-preview-mission/ba-p/4573949",
-   "date": "2026-11-18",
-   "author": "Kiran_Cherukuwada",
-   "team": null,
-   "en": "Azure Elastic SAN Next Generation public preview: Mission-critical performance & cloud-native scale",
-   "it": "Azure Elastic SAN Next Generation public preview: Mission-critical performance & cloud-native scale",
-   "sumEn": "Mission-critical applications such as SAP HANA, Epic, and core transactional databases demand consistently high performance and predictable low latency.",
-   "sum": "Mission-critical applications such as SAP HANA, Epic, and core transactional databases demand consistently high performance and predictable low latency.",
-   "cat": "Data",
-   "service": "Azure Elastic SAN",
-   "status": "Preview",
-   "translated": false,
-   "read": 9,
    "readEst": true
   },
   {
@@ -2099,24 +2135,6 @@
   },
   {
    "src": "Microsoft Community Hub",
-   "blog": "Azure Integration Services Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/azure-api-management-premium-v2-now-available-in-35-azure/ba-p/4573987",
-   "date": "2026-11-17",
-   "author": "Sreekanth_Thirthala",
-   "team": null,
-   "en": "Azure API Management Premium v2 now available in 35 Azure regions",
-   "it": "Azure API Management Premium v2 now available in 35 Azure regions",
-   "sumEn": "We are excited to announce that Azure API Management Premium v2 is now available in 35 Azure regions , expanding deployment options for organizations building and managing enterprise API workloads on Azure.",
-   "sum": "We are excited to announce that Azure API Management Premium v2 is now available in 35 Azure regions , expanding deployment options for organizations building and managing enterprise API workloads on Azure.",
-   "cat": "Apps",
-   "service": "Azure API Management",
-   "status": "GA",
-   "translated": false,
-   "read": 4,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
    "blog": "Oracle on Azure Blog",
    "url": "https://techcommunity.microsoft.com/t5/oracle-on-azure-blog/announcing-azure-workload-center-for-oracle-and-azure-copilot/ba-p/4573276",
    "date": "2026-11-17",
@@ -2651,24 +2669,6 @@
    "status": "Preview",
    "translated": false,
    "read": 3,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Compute Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-compute-blog/announcing-public-preview-of-vm-adaptive-placement/ba-p/4572196",
-   "date": "2026-11-17",
-   "author": "LavanyaK",
-   "team": null,
-   "en": "Announcing Public Preview of VM adaptive placement",
-   "it": "Announcing Public Preview of VM adaptive placement",
-   "sumEn": "Today at Microsoft Ignite, we're announcing the public preview of VM adaptive placement, a new way to create Azure virtual machines that helps increase the success rate of your deployment. With a standard VM create, you name one exact VM size, and the deployment fails if that size isn't available.",
-   "sum": "Today at Microsoft Ignite, we're announcing the public preview of VM adaptive placement, a new way to create Azure virtual machines that helps increase the success rate of your deployment. With a standard VM create, you name one exact VM size, and the deployment fails if that size isn't available.",
-   "cat": "Infrastructure",
-   "service": "Azure PowerShell",
-   "status": "Preview",
-   "translated": false,
-   "read": 6,
    "readEst": true
   }
  ]
