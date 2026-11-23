@@ -1,6 +1,24 @@
 {
- "updated": "2026-11-22T23:22+01:00",
+ "updated": "2026-11-23T16:48+01:00",
  "items": [
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Integration Services Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/rotating-credentials-in-azure-api-management/ba-p/4575478",
+   "date": "2026-11-22",
+   "author": "vladvino",
+   "team": null,
+   "en": "Rotating credentials in Azure API Management",
+   "it": "Rotating credentials in Azure API Management",
+   "sumEn": "Credentials covered Subscription keys Named values that contain secrets Backend credentials (headers, query parameters, client certificates) OAuth 2.0 and OpenID Connect client secrets Connection strings (for example, Event Hubs loggers) Credentials written directly into policies How to rotate safely Use this order…",
+   "sum": "Credentials covered Subscription keys Named values that contain secrets Backend credentials (headers, query parameters, client certificates) OAuth 2.0 and OpenID Connect client secrets Connection strings (for example, Event Hubs loggers) Credentials written directly into policies How to rotate safely Use this order…",
+   "cat": "Apps",
+   "service": "Azure API Management",
+   "status": null,
+   "translated": false,
+   "read": 6,
+   "readEst": true
+  },
   {
    "src": "Microsoft Community Hub",
    "blog": "Azure Compute Blog",
@@ -35,24 +53,6 @@
    "status": null,
    "translated": false,
    "read": 6,
-   "readEst": true
-  },
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure Integration Services Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-integration-services-blog/rotating-credentials-in-azure-api-management/ba-p/4575478",
-   "date": "2026-11-21",
-   "author": "vladvino",
-   "team": null,
-   "en": "Rotating credentials in Azure API Management",
-   "it": "Rotating credentials in Azure API Management",
-   "sumEn": "Credentials covered by this guidance Subscription keys Named values that contain secrets Backend credentials (headers, query parameters, client certificates) OAuth 2.0 and OpenID Connect client secrets Connection strings (for example, Event Hubs loggers) Credentials written directly into policies How to rotate safely…",
-   "sum": "Credentials covered by this guidance Subscription keys Named values that contain secrets Backend credentials (headers, query parameters, client certificates) OAuth 2.0 and OpenID Connect client secrets Connection strings (for example, Event Hubs loggers) Credentials written directly into policies How to rotate safely…",
-   "cat": "Apps",
-   "service": "Azure API Management",
-   "status": null,
-   "translated": false,
-   "read": 4,
    "readEst": true
   },
   {
