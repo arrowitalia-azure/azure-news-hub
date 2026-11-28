@@ -1,24 +1,6 @@
 {
- "updated": "2026-11-27T15:50+01:00",
+ "updated": "2026-11-28T01:24+01:00",
  "items": [
-  {
-   "src": "Microsoft Community Hub",
-   "blog": "Azure High Performance Computing (HPC) Blog",
-   "url": "https://techcommunity.microsoft.com/t5/azure-high-performance-computing/run-slurm-on-kubernetes-with-slinky/ba-p/4577289",
-   "date": "2026-11-27",
-   "author": "Hugo_Meiland",
-   "team": null,
-   "en": "Run Slurm on Kubernetes with Slinky",
-   "it": "Run Slurm on Kubernetes with Slinky",
-   "sumEn": "Run Slurm on Kubernetes with Slinky What Slinky does Slurm is a workload manager for jobs with explicit resource requirements: a simulation needs a number of nodes, a training run needs GPUs, and a parameter sweep needs hundreds of independent tasks.",
-   "sum": "Run Slurm on Kubernetes with Slinky What Slinky does Slurm is a workload manager for jobs with explicit resource requirements: a simulation needs a number of nodes, a training run needs GPUs, and a parameter sweep needs hundreds of independent tasks.",
-   "cat": "Apps",
-   "service": "Azure Kubernetes Service",
-   "status": null,
-   "translated": false,
-   "read": 32,
-   "readEst": true
-  },
   {
    "src": "Microsoft Community Hub",
    "blog": "Apps on Azure Blog",
@@ -2665,6 +2647,24 @@
    "status": null,
    "translated": false,
    "read": 11,
+   "readEst": true
+  },
+  {
+   "src": "Microsoft Community Hub",
+   "blog": "Azure Tools Blog",
+   "url": "https://techcommunity.microsoft.com/t5/azure-tools-blog/announcing-public-preview-of-the-next-generation-of-azure-cli/ba-p/4573824",
+   "date": "2026-11-17",
+   "author": "AakashMSFT",
+   "team": null,
+   "en": "Announcing Public Preview of the next generation of Azure CLI and Azure PowerShell",
+   "it": "Announcing Public Preview of the next generation of Azure CLI and Azure PowerShell",
+   "sumEn": "Today, we are announcing the public preview of the next generation of Azure CLI and Azure PowerShell : a shared command engine with new experiences for discovering commands, managing sign-in contexts and troubleshooting failures.",
+   "sum": "Today, we are announcing the public preview of the next generation of Azure CLI and Azure PowerShell : a shared command engine with new experiences for discovering commands, managing sign-in contexts and troubleshooting failures.",
+   "cat": "Apps",
+   "service": "Azure CLI",
+   "status": "Preview",
+   "translated": false,
+   "read": 4,
    "readEst": true
   }
  ]
